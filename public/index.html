@@ -20,7 +20,7 @@
 <footer class="footer">Nicolas HAYER - Université de Poitiers - 2026</footer></main>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script>
-const K="co-v3",R="co-v3-race",S="co-v3-results";
+const K="co-v4",R="co-v4-race",S="co-v4-results";
 let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),timer=null;
 const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");if(x==="manager")loadSession()}
@@ -29,12 +29,15 @@ function dur(ms){let s=Math.floor(ms/1000),h=Math.floor(s/3600);s%=3600;let m=Ma
 function msg(id,t,c="status"){$(id).innerHTML=`<div class="status ${c}">${t}</div>`}
 function net(){let on=navigator.onLine;$("network").textContent=on?"🟢 Réseau disponible — synchronisation automatique":"🟠 Hors réseau — données conservées localement";if(on){sync();refresh()}}
 window.addEventListener("online",net);window.addEventListener("offline",net);
+const params=new URLSearchParams(location.search);
+if(params.get("date")&&!session){session={id:params.get("date"),date:params.get("date"),title:params.get("title")||""};localStorage.setItem(K,JSON.stringify(session));}
+
 
 function fillParticipantSession(){
   if(session){$("pdate").value=session.date;$("ptitle").value=session.title}
 }
 function fillManagerSession(){
-  if(session){$("gdate").value=session.date;$("gtitle").value=session.title;$("active").innerHTML=`<b>${esc(session.title)}</b><br>${session.date}<br><span class=small>Identifiant : ${esc(session.id)}</span>`}
+  if(session){$("gdate").value=session.date;$("gtitle").value=session.title;$("active").innerHTML=`<b>Séance active</b><br><strong>${esc(session.title)}</strong><br>${session.date}<br><span class=small>Identifiant : ${esc(session.id)}</span>`}
 }
 function loadSession(){
   if(!session){$("active").innerHTML="<p class=small>Aucune séance active. Crée-en une.</p>";return}
@@ -105,7 +108,7 @@ function render(){
   a=a.filter(x=>(!fc||String(x.class_name).toLowerCase().includes(fc))&&(!fco||String(x.course).toLowerCase().includes(fco)));
   let done=a.filter(x=>x.finish_at),run=a.filter(x=>!x.finish_at),avg=done.length?done.reduce((s,x)=>s+x.finish_at-x.start_at,0)/done.length:0;
   $("stats").innerHTML=`<span class=stat><b>${a.length}</b> participants</span><span class=stat><b>${run.length}</b> en course</span><span class=stat><b>${done.length}</b> arrivés</span><span class=stat><b>${done.length?dur(avg):"—"}</b> moyenne</span>`;
-  $("table").innerHTML=a.length?`<table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Arrivée</th><th>Temps</th></tr>${a.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td>${x.finish_at?clock(x.finish_at):"—"}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"En course"}</b></td></tr>`).join("")}</table>`:"<p class=small>Aucun résultat.</p>"
+  $("table").innerHTML=a.length?`<div class="small sessionline">Séance : <b>${esc(session?.title||"")}</b> — Date : <b>${esc(session?.date||"")}</b></div><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Arrivée</th><th>Temps</th></tr>${a.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td>${x.finish_at?clock(x.finish_at):"—"}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"En course"}</b></td></tr>`).join("")}</table>`:"<p class=small>Aucun résultat.</p>"
 }
 function exportCSV(){
   let a=results.filter(x=>!session||x.session_id===session.id),o=["Prénom;Nom;Classe;Circuit / balises;Départ;Arrivée;Temps"];
