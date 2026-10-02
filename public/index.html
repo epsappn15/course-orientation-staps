@@ -15,15 +15,12 @@
 
 <section id="manager" class="hidden">
 <div id="managerContent">
-<div class="card"><h2>👨‍🏫 Gestionnaire</h2><p class="small">Suivi en direct des participants. Les données se mettent à jour automatiquement lorsqu'un réseau est disponible.</p>
-<div class="grid"><div><label>Date</label><input type="date" id="gdate"></div><div><label>Nom de séance</label><input id="gtitle" placeholder="CO — séance 1"></div></div>
-<button class="r wide" onclick="create()">Créer / utiliser la séance</button><div id="gmsg"></div><div id="sessionLink"></div>
-</div>
-<div class="card"><h2>📱 Accès des participants</h2><div id="sessionQr" class="qr"></div><p class="small">Les étudiants peuvent scanner ce QR code ou utiliser le lien. La date et le nom de la séance seront automatiquement préremplis.</p></div>
-<div class="card"><h2>📌 Séance active</h2><div id="active"></div></div>
-<div class="card"><h2>👥 Suivi en direct</h2><div id="stats"></div><div id="liveNow" class="status"></div></div>
-<div class="card"><h2>📋 Résultats</h2><div class="grid"><input id="fc" placeholder="Filtrer classe" oninput="render()"><input id="fco" placeholder="Filtrer circuit / balises" oninput="render()"></div><div class="table" id="table"></div><button class="g wide" onclick="exportCSV()">⬇ Export CSV</button></div>
-</div></section>
+<div class="card"><h2>Gestionnaire</h2><p class="small">Le gestionnaire récupère automatiquement les données lorsqu'un réseau est disponible. Le QR est le mode de secours.</p><div class="grid"><div><label>Date</label><input type="date" id="gdate"></div><div><label>Nom de séance</label><input id="gtitle" placeholder="CO — séance 1"></div></div><button class="r wide" onclick="create()">Créer / utiliser la séance</button><div id="gmsg"></div><div id="sessionLink"></div></div>
+<div class="card"><h2>📱 Accès des participants</h2><div id="sessionQr" class="qr"></div><p class="small">Le lien et le QR préremplissent automatiquement la date et le nom de la séance.</p></div>
+<div class="card"><h2>Séance active</h2><div id="active"></div></div>
+<div class="card"><h2>👥 Suivi en direct</h2><div id="liveStats"></div><div id="liveNow" class="status"></div></div>
+<div class="card"><h2>📋 Résultats</h2><div id="stats"></div><div class="grid"><input id="fc" placeholder="Filtrer classe" oninput="render()"><input id="fco" placeholder="Filtrer circuit / balises" oninput="render()"></div><div class="table" id="table"></div><button class="g wide" onclick="exportCSV()">⬇ Export CSV</button></div></div>
+</section>
 <footer class="footer">Nicolas HAYER - Université de Poitiers - 2026</footer></main>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script>
@@ -40,33 +37,36 @@ async function showServerVersion(){try{const r=await fetch("/api/version",{cache
 
 function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");$("participantBtn").className="mode "+(x==="participant"?"active-participant":"inactive");$("managerBtn").className="mode "+(x==="manager"?"active-manager":"inactive");if(x==="manager")loadSession()}
 async function logout(){show("participant")}
+
+function renderHistory(){
+  const e=$("history"); if(!e)return;
+  const a=history.slice().sort((x,y)=>(Number(y.finish_at)||0)-(Number(x.finish_at)||0));
+  if(!a.length){e.innerHTML='<p class="small">Aucune course terminée sur ce téléphone.</p>';return}
+  e.innerHTML='<div class="table"><table><tr><th>Date</th><th>Séance</th><th>Circuit</th><th>Durée</th></tr>'+a.map(x=>`<tr><td>${esc(x.session_date||'')}</td><td>${esc(x.session_title||'')}</td><td>${esc(x.course||'')}</td><td><b>${dur(Number(x.finish_at)-Number(x.start_at))}</b></td></tr>`).join('')+'</table></div>';
+}
+function renderSessionQR(){
+  const e=$("sessionQr"); if(!e||!session)return;
+  const u=location.origin+location.pathname+'?date='+encodeURIComponent(session.date)+'&title='+encodeURIComponent(session.title);
+  if(typeof QRCode==='undefined'){e.innerHTML='<p class="small">QR en cours de chargement…</p>';return;}
+  QRCode.toDataURL(u,{width:300,margin:1},(err,data)=>{if(err){e.innerHTML='<p class="small">QR indisponible.</p>';return;}e.innerHTML=`<img src="${data}" alt="QR code séance"><br><button class="g" onclick="downloadSessionQR()">⬇ Télécharger le QR</button>`;});
+}
+function downloadSessionQR(){const img=$("sessionQr")?.querySelector('img');if(!img)return;const a=document.createElement('a');a.href=img.src;a.download='QR-seance-'+(session?.date||'orientation')+'.png';a.click();}
+
 function showSessionLink(){
   const el=$("sessionLink");
   if(!el||!session)return;
   const u=location.origin+location.pathname+"?date="+encodeURIComponent(session.date)+"&title="+encodeURIComponent(session.title);
   el.innerHTML=`<label>Lien à transmettre aux étudiants</label><div class="grid"><input id="shareLink" value="${esc(u)}" readonly><button class="b" onclick="copySessionLink()">Copier le lien</button></div><p class="small">La date et le nom de la séance seront préremplis sur leur téléphone.</p>`;
+  renderSessionQR();
 }
 async function copySessionLink(){const v=$("shareLink")?.value||"";try{await navigator.clipboard.writeText(v);msg("gmsg","Lien copié dans le presse-papiers.","ok")}catch(e){$("shareLink").select();msg("gmsg","Sélectionne le lien puis copie-le.","status")}}
-function renderSessionQR(){
-  const e=$("sessionQr"); if(!e||!session)return;
-  const u=location.origin+location.pathname+"?date="+encodeURIComponent(session.date)+"&title="+encodeURIComponent(session.title);
-  if(typeof QRCode==="undefined"){e.innerHTML="<p class=small>Le générateur QR n'est pas encore chargé.</p>";return}
-  QRCode.toDataURL(u,{width:300,margin:1},(err,data)=>{
-    if(err){e.innerHTML="<p class=small>QR indisponible.</p>";return}
-    e.innerHTML=`<img src="${data}" alt="QR code séance"><br><button class="g" onclick="downloadSessionQR()">⬇ Télécharger le QR code</button>`;
-  });
-}
-function downloadSessionQR(){
-  const img=$("sessionQr")?.querySelector("img"); if(!img)return;
-  const a=document.createElement("a");a.href=img.src;a.download="QR-seance-"+(session?.date||"orientation")+".png";a.click();
-}
 function fillManagerSession(){
   if(session){$("gdate").value=session.date;$("gtitle").value=session.title;$("active").innerHTML=`<b>Séance active</b><br><strong>${esc(session.title)}</strong><br>${session.date}<br><span class=small>Identifiant : ${esc(session.id)}</span>`}
 }
 function loadSession(){
   if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
   if(!session){$("active").innerHTML="<p class=small>Aucune séance active. Crée-en une.</p>";return}
-  fillManagerSession(); showSessionLink(); renderSessionQR(); refresh(); render();
+  fillManagerSession(); showSessionLink(); refresh(); render();
 }
 
 async function resolveSession(date,title){
@@ -106,16 +106,8 @@ async function start(){
 function tick(){if(race)$("timer").textContent=dur(Date.now()-race.start_at)}
 function finish(){
   if(!race)return;race.finish_at=Date.now();race.updated_at=Date.now();localStorage.setItem(R,JSON.stringify(race));clearInterval(timer);$("run").classList.add("hidden");
-  history=[race,...history.filter(x=>x.id!==race.id)].slice(0,100);localStorage.setItem(H,JSON.stringify(history));
-  renderHistory();
+  history=[race,...history.filter(x=>x.id!==race.id)].slice(0,100);localStorage.setItem(H,JSON.stringify(history));renderHistory();
   msg("pmsg",`Arrivée enregistrée : <b>${dur(race.finish_at-race.start_at)}</b>`,"ok");makeQR();sync();
-}
-
-function renderHistory(){
-  const e=$("history"); if(!e)return;
-  const a=history.slice().sort((x,y)=>Number(y.finish_at||0)-Number(x.finish_at||0));
-  if(!a.length){e.innerHTML='<p class="small">Aucune course terminée sur ce téléphone.</p>';return}
-  e.innerHTML='<div class="table"><table><tr><th>Date</th><th>Séance</th><th>Circuit</th><th>Durée</th></tr>'+a.map(x=>`<tr><td>${esc(x.session_date||"")}</td><td>${esc(x.session_title||"")}</td><td>${esc(x.course||"")}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"—"}</b></td></tr>`).join('')+'</table></div>';
 }
 function makeQR(){
   let payload="COR2."+btoa(unescape(encodeURIComponent(JSON.stringify(race))));
@@ -142,16 +134,11 @@ function render(){
   a=a.filter(x=>(!fc||String(x.class_name).toLowerCase().includes(fc))&&(!fco||String(x.course).toLowerCase().includes(fco)));
   let done=a.filter(x=>x.finish_at),run=a.filter(x=>!x.finish_at),avg=done.length?done.reduce((s,x)=>s+x.finish_at-x.start_at,0)/done.length:0;
   $("stats").innerHTML=`<span class=stat><b>${a.length}</b> participants</span><span class=stat><b>${run.length}</b> en course</span><span class=stat><b>${done.length}</b> arrivés</span><span class=stat><b>${done.length?dur(avg):"—"}</b> moyenne</span>`;
-  const live=$("liveNow");
-  if(live){
-    if(!run.length) live.innerHTML="<b>🟢 Aucun participant actuellement en course.</b>";
-    else live.innerHTML="<b>🏃 Participants encore en course</b><div class=table><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Temps en cours</th></tr>"+run.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td><b data-live-start="${x.start_at}">${dur(Date.now()-x.start_at)}</b></td></tr>`).join("")+"</table></div>";
-  }
+  if($("liveStats")) $("liveStats").innerHTML=`<span class=stat><b>${run.length}</b> 🏃 en course</span><span class=stat><b>${done.length}</b> 🏁 arrivés</span>`;
+  if($("liveNow")) $("liveNow").innerHTML=run.length?'<b>Participants encore en course</b><div class="table"><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Temps</th></tr>'+run.map(x=>`<tr><td>${esc(x.first_name+' '+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td><b data-live-start="${x.start_at}">${dur(Date.now()-x.start_at)}</b></td></tr>`).join('')+'</table></div>':'<span class="small">Aucun participant actuellement en course.</span>';
   $("table").innerHTML=a.length?`<div class="small sessionline">Séance : <b>${esc(session?.title||"")}</b> — Date : <b>${esc(session?.date||"")}</b></div><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Arrivée</th><th>Temps</th></tr>${a.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td>${x.finish_at?clock(x.finish_at):"—"}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"En course"}</b></td></tr>`).join("")}</table>`:"<p class=small>Aucun résultat.</p>"
 }
-function updateLiveClocks(){
-  document.querySelectorAll("[data-live-start]").forEach(e=>e.textContent=dur(Date.now()-Number(e.dataset.liveStart)));
-}
+function updateLiveClocks(){document.querySelectorAll("[data-live-start]").forEach(e=>e.textContent=dur(Date.now()-Number(e.dataset.liveStart)));}
 function exportCSV(){
   let a=results.filter(x=>!session||x.session_id===session.id),o=["Prénom;Nom;Classe;Circuit / balises;Départ;Arrivée;Temps"];
   a.forEach(x=>o.push([x.first_name,x.last_name,x.class_name,x.course,clock(x.start_at),clock(x.finish_at),x.finish_at?dur(x.finish_at-x.start_at):""].map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(";")));
@@ -161,10 +148,8 @@ if(!$("pdate").value) $("pdate").value=todayISO();
 if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
 net();fillParticipantSession();showServerVersion();renderHistory();
 if(race&&!race.finish_at){$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000)}
-if(race&&race.finish_at)makeQR();
-setInterval(()=>{sync();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},4000);
-setInterval(updateLiveClocks,1000);
-render();updateLiveClocks();
+if(race&&race.finish_at)makeQR();setTimeout(renderSessionQR,700);
+setInterval(()=>{sync();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},4000);setInterval(updateLiveClocks,1000);render();
 </script>
 
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload());navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>

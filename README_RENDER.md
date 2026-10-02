@@ -1,3 +1,3 @@
-# Render — V12
+# Déploiement Render — V14
 
-Root Directory vide. Build: npm install. Start: npm start. Variables: TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, ADMIN_USER, ADMIN_PASSWORD, SESSION_SECRET.
+Root Directory vide. Build: npm install. Start: npm start. Variables : TURSO_DATABASE_URL et TURSO_AUTH_TOKEN.

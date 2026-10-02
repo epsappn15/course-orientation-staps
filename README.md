@@ -1,8 +1,3 @@
-# Course d'orientation — V12
+# Course d’orientation — V14
 
-Version de test Render avec synchronisation Turso, gestionnaire et cache PWA renouvelé.
-
-
-## V12
-Version sans identifiant ni mot de passe pour l'espace gestionnaire. Les résultats et exports sont accessibles directement depuis le bouton Gestionnaire.
-\n\n## V14\nAjout du lien de séance, QR code d'accès participant et suivi en direct des participants encore en course.\n
+Version V14 complète : chrono, historique participant, lien de séance, QR de séance, suivi en direct des participants encore en course, synchronisation Render/Turso et fonctionnement hors connexion.
