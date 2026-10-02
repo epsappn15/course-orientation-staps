@@ -24,7 +24,7 @@ const app=express();app.use(express.json({limit:'200kb'}));app.use(cookieSession
 const admin=(req,res,next)=>req.session?.admin?next():res.status(401).json({error:'Non autorisé'});
 app.get('/health',(q,r)=>r.json({ok:true}));
 app.get('/api/me',(q,r)=>r.json({admin:!!q.session?.admin}));
-app.post('/api/login',async(q,r)=>{if(clean(q.body.user,80)!==await get('admin_user','enseignant')||!bcrypt.compareSync(String(q.body.password||''),await get('admin_hash')))return r.status(401).json({error:'Identifiants incorrects'});q.session.admin=true;r.json({ok:true})});
+app.post('/api/login',async(q,r)=>{const expectedUser=process.env.ADMIN_USER||'enseignant';const expectedPassword=process.env.ADMIN_PASSWORD||'ChangezMoi123!';const user=clean(q.body.user,80);const password=String(q.body.password||'');if(user!==expectedUser||password!==expectedPassword)return r.status(401).json({error:'Identifiants incorrects'});q.session.admin=true;r.json({ok:true})});
 app.post('/api/logout',(q,r)=>{q.session=null;r.json({ok:true})});
 app.get('/api/sessions',async(q,r)=>r.json(await all('SELECT id,session_date AS date,title FROM sessions WHERE active=1 ORDER BY session_date DESC')));
 app.post('/api/sessions',async(q,r)=>{const date=clean(q.body.date,10),title=clean(q.body.title,120);if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!title)return r.status(400).json({error:'Date et nom obligatoires'});await exec('INSERT INTO sessions(id,session_date,title,created_at,active) VALUES(?,?,?,?,1) ON CONFLICT(id) DO UPDATE SET title=excluded.title,active=1',[date,date,title,Date.now()]);r.json({id:date,date,title})});
