@@ -1,7 +1,7 @@
-# Course d'orientation — V11
+# Course d'orientation — V12
 
 Version de test Render avec synchronisation Turso, gestionnaire et cache PWA renouvelé.
 
 
-## V11
+## V12
 Version sans identifiant ni mot de passe pour l'espace gestionnaire. Les résultats et exports sont accessibles directement depuis le bouton Gestionnaire.

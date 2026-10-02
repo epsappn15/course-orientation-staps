@@ -21,8 +21,8 @@ async function init(){
 const get=async(k,d='')=>(await one('SELECT value FROM settings WHERE key=?',[k]))?.value??d;
 const clean=(v,n=120)=>String(v??'').trim().slice(0,n), id=()=>crypto.randomBytes(10).toString('hex');
 const app=express();app.use(express.json({limit:'200kb'}));app.use(cookieSession({name:'co_admin',keys:[process.env.SESSION_SECRET||'change-me-in-render'],httpOnly:true,sameSite:'lax',secure:true,maxAge:8*3600*1000}));app.use(express.static(path.join(__dirname,'public'),{setHeaders:(res,file)=>{if(file.endsWith('index.html')||file.endsWith('sw.js')){res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.setHeader('Pragma','no-cache');res.setHeader('Expires','0')}}}));
-app.get('/health',(q,r)=>r.json({ok:true,version:'V10'}));
-app.get('/api/version',(q,r)=>r.json({version:'V10',build:'2026-10-03'}));
+app.get('/health',(q,r)=>r.json({ok:true,version:'V12'}));
+app.get('/api/version',(q,r)=>r.json({version:'V12',build:'2026-10-03'}));
 app.get('/api/me',(q,r)=>r.json({admin:!!q.session?.admin}));
 app.post('/api/login',async(q,r)=>{const expectedUser=process.env.ADMIN_USER||'enseignant';const expectedPassword=process.env.ADMIN_PASSWORD||'ChangezMoi123!';const user=clean(q.body.user,80);const password=String(q.body.password||'');if(user!==expectedUser||password!==expectedPassword)return r.status(401).json({error:'Identifiants incorrects'});q.session.admin=true;r.json({ok:true})});
 app.post('/api/logout',(q,r)=>{q.session=null;r.json({ok:true})});

@@ -22,9 +22,17 @@
 <footer class="footer">Nicolas HAYER - Université de Poitiers - 2026</footer></main>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script>
-const K="co-v7",R="co-v7-race",S="co-v7-results";
+const K="co-v12-session",R="co-v12-race",S="co-v12-results";
 let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),timer=null;
 const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+function todayISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function dur(ms){ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,"0")).join(":")}
+function clock(ms){return ms?new Date(Number(ms)).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}):""}
+function msg(id,html,kind="status"){const e=$(id);if(!e)return;e.className="status "+kind;e.innerHTML=html}
+function net(){const e=$("network");if(!e)return;const update=()=>{e.textContent=navigator.onLine?"🟢 Connexion disponible — synchronisation automatique active.":"🟠 Hors connexion — les données sont conservées sur ce téléphone."};window.addEventListener("online",update);window.addEventListener("offline",update);update()}
+function fillParticipantSession(){const params=new URLSearchParams(location.search);const d=params.get("date")||session?.date||todayISO();const t=params.get("title")||session?.title||"";if($("pdate")&&!$("pdate").value)$("pdate").value=d;if($("ptitle")&&!$("ptitle").value&&t)$("ptitle").value=t}
+async function showServerVersion(){try{const r=await fetch("/api/version",{cache:"no-store"});if(r.ok){const x=await r.json();const e=document.querySelector(".card p.small b");if(e)e.textContent="Version "+x.version}}catch(e){}}
+
 function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");$("participantBtn").className="mode "+(x==="participant"?"active-participant":"inactive");$("managerBtn").className="mode "+(x==="manager"?"active-manager":"inactive");if(x==="manager")loadSession()}
 async function logout(){show("participant")}
 function showSessionLink(){
