@@ -13,14 +13,14 @@
 </section>
 
 <section id="manager" class="hidden">
-<div class="card"><h2>Gestionnaire</h2><p class="small">Le gestionnaire récupère automatiquement les données lorsqu'un réseau est disponible. Le QR est le mode de secours.</p><div class="grid"><div><label>Date</label><input type="date" id="gdate"></div><div><label>Nom de séance</label><input id="gtitle" placeholder="CO — séance 1"></div></div><button class="r wide" onclick="create()">Créer / utiliser la séance</button><div id="gmsg"></div></div>
+<div class="card"><h2>Gestionnaire</h2><p class="small">Le gestionnaire récupère automatiquement les données lorsqu'un réseau est disponible. Le QR est le mode de secours.</p><div class="grid"><div><label>Date</label><input type="date" id="gdate"></div><div><label>Nom de séance</label><input id="gtitle" placeholder="CO — séance 1"></div></div><button class="r wide" onclick="create()">Créer / utiliser la séance</button><div id="gmsg"></div><div id="sessionLink"></div></div>
 <div class="card"><h2>Séance active</h2><div id="active"></div></div>
 <div class="card"><h2>Résultats</h2><div id="stats"></div><div class="grid"><input id="fc" placeholder="Filtrer classe" oninput="render()"><input id="fco" placeholder="Filtrer circuit / balises" oninput="render()"></div><div class="table" id="table"></div><button class="g wide" onclick="exportCSV()">⬇ Export CSV</button></div>
 </section>
 <footer class="footer">Nicolas HAYER - Université de Poitiers - 2026</footer></main>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script>
-const K="co-v4",R="co-v4-race",S="co-v4-results";
+const K="co-v5",R="co-v5-race",S="co-v5-results";
 let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),timer=null;
 const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");if(x==="manager")loadSession()}
@@ -30,18 +30,29 @@ function msg(id,t,c="status"){$(id).innerHTML=`<div class="status ${c}">${t}</di
 function net(){let on=navigator.onLine;$("network").textContent=on?"🟢 Réseau disponible — synchronisation automatique":"🟠 Hors réseau — données conservées localement";if(on){sync();refresh()}}
 window.addEventListener("online",net);window.addEventListener("offline",net);
 const params=new URLSearchParams(location.search);
-if(params.get("date")&&!session){session={id:params.get("date"),date:params.get("date"),title:params.get("title")||""};localStorage.setItem(K,JSON.stringify(session));}
-
+const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const urlDate=params.get("date")||"";
+const urlTitle=params.get("title")||"";
+if(urlDate){session={id:urlDate,date:urlDate,title:urlTitle||session?.title||""};localStorage.setItem(K,JSON.stringify(session));}
 
 function fillParticipantSession(){
-  if(session){$("pdate").value=session.date;$("ptitle").value=session.title}
+  $("pdate").value=session?.date||urlDate||todayISO();
+  $("ptitle").value=session?.title||urlTitle||$("ptitle").value||"";
 }
+function showSessionLink(){
+  const el=$("sessionLink");
+  if(!el||!session)return;
+  const u=location.origin+location.pathname+"?date="+encodeURIComponent(session.date)+"&title="+encodeURIComponent(session.title);
+  el.innerHTML=`<label>Lien à transmettre aux étudiants</label><div class="grid"><input id="shareLink" value="${esc(u)}" readonly><button class="b" onclick="copySessionLink()">Copier le lien</button></div><p class="small">La date et le nom de la séance seront préremplis sur leur téléphone.</p>`;
+}
+async function copySessionLink(){const v=$("shareLink")?.value||"";try{await navigator.clipboard.writeText(v);msg("gmsg","Lien copié dans le presse-papiers.","ok")}catch(e){$("shareLink").select();msg("gmsg","Sélectionne le lien puis copie-le.","status")}}
 function fillManagerSession(){
   if(session){$("gdate").value=session.date;$("gtitle").value=session.title;$("active").innerHTML=`<b>Séance active</b><br><strong>${esc(session.title)}</strong><br>${session.date}<br><span class=small>Identifiant : ${esc(session.id)}</span>`}
 }
 function loadSession(){
+  if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
   if(!session){$("active").innerHTML="<p class=small>Aucune séance active. Crée-en une.</p>";return}
-  fillManagerSession(); refresh(); render();
+  fillManagerSession(); showSessionLink(); refresh(); render();
 }
 
 async function resolveSession(date,title){
@@ -61,12 +72,12 @@ async function create(){
   if(!d||!t)return msg("gmsg","Date et nom obligatoires","err");
   let x=await resolveSession(d,t);
   if(!x)return msg("gmsg","Impossible de créer la séance.","err");
-  session=x;localStorage.setItem(K,JSON.stringify(session));loadSession();msg("gmsg","Séance prête.","ok");
+  session=x;localStorage.setItem(K,JSON.stringify(session));loadSession();showSessionLink();msg("gmsg","Séance prête.","ok");
 }
 
 async function start(){
-  let d=$("pdate").value,t=$("ptitle").value.trim();
-  if(!d||!t)return msg("pmsg","Renseigne la date et le nom de la séance.","err");
+  let d=$("pdate").value||todayISO(),t=$("ptitle").value.trim();
+  if(!d||!t)return msg("pmsg",`Date reçue : <b>${esc(d||"vide")}</b> — Nom reçu : <b>${esc(t||"vide")}</b><br>Renseigne la date et le nom de la séance.`,"err");
   if([$("first").value.trim(),$("last").value.trim(),$("cls").value.trim(),$("course").value.trim()].some(x=>!x))
     return msg("pmsg","Tous les champs sont obligatoires.","err");
   let x=await resolveSession(d,t);
@@ -115,11 +126,13 @@ function exportCSV(){
   a.forEach(x=>o.push([x.first_name,x.last_name,x.class_name,x.course,clock(x.start_at),clock(x.finish_at),x.finish_at?dur(x.finish_at-x.start_at):""].map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(";")));
   let b=new Blob(["\ufeff"+o.join("\r\n")],{type:"text/csv"}),u=URL.createObjectURL(b),a1=document.createElement("a");a1.href=u;a1.download="orientation-"+(session?.date||"resultats")+".csv";a1.click()
 }
+if(!$("pdate").value) $("pdate").value=todayISO();
+if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
 net();fillParticipantSession();
 if(race&&!race.finish_at){$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000)}
 if(race&&race.finish_at)makeQR();
 setInterval(()=>{sync();refresh()},4000);render();loadSession();
 </script>
 
-<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");</script>
+<script>if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload());navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
 </body></html>

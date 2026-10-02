@@ -27,3 +27,7 @@ Le QR de récupération actuel encode les données de manière obfusquée (Base6
 - Les deux logos SUAPS et STAPS sont affichés sur l'écran principal.
 - Le bouton sélectionné change réellement de couleur : rouge pour Participant, bleu pour Gestionnaire.
 - Le cache PWA a été versionné pour forcer la prise en compte de cette correction.
+
+
+## V5
+Cache PWA renouvelé, suppression des anciens caches, date du jour préremplie et lien de séance partageable avec date + nom préremplis.
