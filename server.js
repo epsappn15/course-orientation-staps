@@ -12,8 +12,11 @@ async function init(){
  await exec(`CREATE TABLE IF NOT EXISTS races(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,session_date TEXT,session_title TEXT,first_name TEXT NOT NULL,last_name TEXT NOT NULL,class_name TEXT NOT NULL,course TEXT NOT NULL,start_at INTEGER NOT NULL,finish_at INTEGER,updated_at INTEGER NOT NULL);`);
  for(const col of ['session_date TEXT','session_title TEXT']){try{await exec(`ALTER TABLE races ADD COLUMN ${col}`)}catch(e){}}
  await exec(`CREATE INDEX IF NOT EXISTS idx_races_session ON races(session_id);`);
+ const configuredUser=process.env.ADMIN_USER||'enseignant';
+ const configuredPassword=process.env.ADMIN_PASSWORD||'ChangezMoi123!';
  const ah=await one('SELECT value FROM settings WHERE key=?',['admin_hash']);
- if(!ah){await exec('INSERT INTO settings(key,value) VALUES(?,?),(?,?)',['admin_user',process.env.ADMIN_USER||'enseignant','admin_hash',bcrypt.hashSync(process.env.ADMIN_PASSWORD||'ChangezMoi123!',12)]);}
+ if(!ah){await exec('INSERT INTO settings(key,value) VALUES(?,?),(?,?)',['admin_user',configuredUser,'admin_hash',bcrypt.hashSync(configuredPassword,12)]);}
+ else if(process.env.ADMIN_PASSWORD){await exec('UPDATE settings SET value=? WHERE key=?',[configuredUser,'admin_user']);await exec('UPDATE settings SET value=? WHERE key=?',[bcrypt.hashSync(configuredPassword,12),'admin_hash']);}
 }
 const get=async(k,d='')=>(await one('SELECT value FROM settings WHERE key=?',[k]))?.value??d;
 const clean=(v,n=120)=>String(v??'').trim().slice(0,n), id=()=>crypto.randomBytes(10).toString('hex');

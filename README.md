@@ -1,10 +1,8 @@
-# Course d'orientation — V7
+# Course d'orientation — V8
 
-Version Render/Turso avec gestionnaire authentifié.
+Version Render/Turso avec authentification gestionnaire synchronisée depuis les variables d'environnement Render.
 
-- Date et nom de séance utilisés comme identifiant de séance (date = ID).
-- Lien de séance partageable avec date et nom préremplis.
-- Synchronisation automatique vers Turso.
-- Fonctionnement local hors connexion côté participant.
-- Gestionnaire : connexion, séance active, résultats, filtres, export CSV.
-- Logos SUAPS et STAPS Université de Poitiers.
+- Participant : date, nom de séance, identité, classe, circuit, départ/arrivée.
+- Gestionnaire : connexion, séances, résultats, export.
+- Synchronisation en ligne et stockage local hors connexion.
+- Les variables `ADMIN_USER` et `ADMIN_PASSWORD` définies dans Render deviennent les identifiants actifs au redémarrage.
