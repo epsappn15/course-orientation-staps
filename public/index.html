@@ -1,9 +1,9 @@
 <!doctype html><html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a90818">
-<title>Course d'orientation — V10</title><link rel="manifest" href="manifest.json"><style>
+<title>Course d'orientation — V11</title><link rel="manifest" href="manifest.json"><style>
 :root{--r:#a90818;--b:#075d8d;--n:#123f5e;--bg:#f5f6f7;--line:#dfe5e8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial;color:#202426}header{background:linear-gradient(110deg,#a90818,#c40d21);padding:9px 15px;border-bottom:5px solid var(--b)}.logos{max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}.logos img{height:62px;max-width:46%;object-fit:contain}.logos img:last-child{background:#fff;border-radius:5px;padding:4px}.wrap{max-width:900px;margin:20px auto;padding:0 15px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:21px;margin-bottom:15px}h1,h2{color:var(--n)}label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}input{width:100%;padding:12px;border:1px solid #cbd4d9;border-radius:10px;font-size:16px}button{border:0;border-radius:10px;padding:13px 15px;font-weight:700;cursor:pointer}.r{background:var(--r);color:#fff}.b{background:var(--b);color:#fff}.g{background:#eaf0f4;color:var(--n)}.mode{width:100%;border:2px solid transparent;transition:.15s}.mode.active-participant{background:var(--r);color:#fff;border-color:#7d0713;box-shadow:0 0 0 3px #a9081826}.mode.active-manager{background:var(--b);color:#fff;border-color:#04486c;box-shadow:0 0 0 3px #075d8d26}.mode.inactive{background:#eaf0f4;color:var(--n)}.wide{width:100%;margin-top:11px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.status{padding:13px;border-radius:10px;background:#edf4f8;margin-top:12px}.ok{background:#e8f4ec}.err{background:#fde8e8;color:#8b111d}.timer{text-align:center;font-size:40px;font-weight:800;color:var(--r);margin:12px}.hidden{display:none!important}.qr{text-align:center}.qr img{max-width:100%;width:300px}.small{font-size:12px;color:#69747b}.table{overflow:auto}table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{font-size:11px;color:#69747b;text-transform:uppercase}.stat{display:inline-block;background:#f4f7f8;border-radius:10px;padding:10px;margin:4px}.footer{text-align:center;color:#777;font-size:12px;padding:0 0 20px}@media(max-width:600px){.grid{grid-template-columns:1fr}.logos img{height:48px}.logos{gap:8px}}
 </style></head><body><header><div class="logos"><img src="logo-suaps.png" alt="SUAPS Université de Poitiers"><img src="logo-staps.png" alt="STAPS Université de Poitiers"></div></header><main class="wrap">
-<div class="card"><h1>Course d'orientation</h1><p class="small"><b>Version V10</b></p><p id="network" class="small"></p><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
+<div class="card"><h1>Course d'orientation</h1><p class="small"><b>Version V11</b></p><p id="network" class="small"></p><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
 
 <section id="participant">
 <div class="card"><h2>Ma séance</h2><div class="grid"><div><label>Date de séance</label><input type="date" id="pdate"></div><div><label>Nom de la séance</label><input id="ptitle" placeholder="Ex. CO STAPS"></div></div>
@@ -13,8 +13,7 @@
 </section>
 
 <section id="manager" class="hidden">
-<div id="loginCard" class="card"><h2>Accès gestionnaire</h2><p class="small">Connectez-vous pour consulter les résultats.</p><label>Identifiant</label><input id="loginUser" autocomplete="username" value="enseignant"><label>Mot de passe</label><input id="loginPass" type="password" autocomplete="current-password"><button class="b wide" onclick="login()">Se connecter</button><div id="loginMsg"></div><p id="serverVersion" class="small"></p></div>
-<div id="managerContent" class="hidden">
+<div id="managerContent">
 <div style="text-align:right;margin-bottom:8px"><button class="g" onclick="logout()">Se déconnecter</button></div>
 <div class="card"><h2>Gestionnaire</h2><p class="small">Le gestionnaire récupère automatiquement les données lorsqu'un réseau est disponible. Le QR est le mode de secours.</p><div class="grid"><div><label>Date</label><input type="date" id="gdate"></div><div><label>Nom de séance</label><input id="gtitle" placeholder="CO — séance 1"></div></div><button class="r wide" onclick="create()">Créer / utiliser la séance</button><div id="gmsg"></div><div id="sessionLink"></div></div>
 <div class="card"><h2>Séance active</h2><div id="active"></div></div>
@@ -26,51 +25,8 @@
 const K="co-v7",R="co-v7-race",S="co-v7-results";
 let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),timer=null;
 const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");$("participantBtn").className="mode "+(x==="participant"?"active-participant":"inactive");$("managerBtn").className="mode "+(x==="manager"?"active-manager":"inactive");if(x==="manager")checkLogin()}
-function clock(t){return new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}
-function dur(ms){let s=Math.floor(ms/1000),h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);s%=60;return[h,m,s].map(x=>String(x).padStart(2,"0")).join(":")}
-function msg(id,t,c="status"){$(id).innerHTML=`<div class="status ${c}">${t}</div>`}
-function net(){let on=navigator.onLine;$("network").textContent=on?"🟢 Réseau disponible — synchronisation automatique":"🟠 Hors réseau — données conservées localement";if(on){sync();refresh()}}
-window.addEventListener("online",net);window.addEventListener("offline",net);
-const params=new URLSearchParams(location.search);
-const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
-const urlDate=params.get("date")||"";
-const urlTitle=params.get("title")||"";
-if(urlDate){session={id:urlDate,date:urlDate,title:urlTitle||session?.title||""};localStorage.setItem(K,JSON.stringify(session));}
-
-
-async function showServerVersion(){try{let r=await fetch('/api/version',{cache:'no-store'});let d=await r.json();$('serverVersion').textContent='Serveur : '+d.version+' — '+d.build}catch(e){}}
-async function checkLogin(){
-  try{
-    let r=await fetch("/api/me",{credentials:"same-origin"});
-    let d=await r.json();
-    if(d.admin){
-      $("loginCard").classList.add("hidden");
-      $("managerContent").classList.remove("hidden");
-      loadSession();
-    }else{
-      $("loginCard").classList.remove("hidden");
-      $("managerContent").classList.add("hidden");
-    }
-  }catch(e){
-    msg("loginMsg","Impossible de vérifier la connexion.","err");
-  }
-}
-async function login(){
-  let user=$("loginUser").value.trim(),password=$("loginPass").value;
-  try{
-    let r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({user,password})});
-    let d=await r.json();
-    if(!r.ok)return msg("loginMsg",d.error||"Connexion impossible.","err");
-    $("loginPass").value="";
-    await checkLogin();
-  }catch(e){msg("loginMsg","Connexion impossible.","err");}
-}
-async function logout(){try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){} show("manager");}
-function fillParticipantSession(){
-  $("pdate").value=session?.date||urlDate||todayISO();
-  $("ptitle").value=session?.title||urlTitle||$("ptitle").value||"";
-}
+function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");$("participantBtn").className="mode "+(x==="participant"?"active-participant":"inactive");$("managerBtn").className="mode "+(x==="manager"?"active-manager":"inactive");if(x==="manager")loadSession()}
+async function logout(){show("participant")}
 function showSessionLink(){
   const el=$("sessionLink");
   if(!el||!session)return;
