@@ -1,8 +1,0 @@
-{
-  "name": "Course d'orientation",
-  "short_name": "CO",
-  "start_url": "./",
-  "display": "standalone",
-  "theme_color": "#a90818",
-  "background_color": "#f5f6f7"
-}
