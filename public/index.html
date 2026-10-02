@@ -13,6 +13,9 @@
 </section>
 
 <section id="manager" class="hidden">
+<div id="loginCard" class="card"><h2>Accès gestionnaire</h2><p class="small">Connectez-vous pour consulter les résultats.</p><label>Identifiant</label><input id="loginUser" autocomplete="username" value="enseignant"><label>Mot de passe</label><input id="loginPass" type="password" autocomplete="current-password"><button class="b wide" onclick="login()">Se connecter</button><div id="loginMsg"></div></div>
+<div id="managerContent" class="hidden">
+<div style="text-align:right;margin-bottom:8px"><button class="g" onclick="logout()">Se déconnecter</button></div>
 <div class="card"><h2>Gestionnaire</h2><p class="small">Le gestionnaire récupère automatiquement les données lorsqu'un réseau est disponible. Le QR est le mode de secours.</p><div class="grid"><div><label>Date</label><input type="date" id="gdate"></div><div><label>Nom de séance</label><input id="gtitle" placeholder="CO — séance 1"></div></div><button class="r wide" onclick="create()">Créer / utiliser la séance</button><div id="gmsg"></div><div id="sessionLink"></div></div>
 <div class="card"><h2>Séance active</h2><div id="active"></div></div>
 <div class="card"><h2>Résultats</h2><div id="stats"></div><div class="grid"><input id="fc" placeholder="Filtrer classe" oninput="render()"><input id="fco" placeholder="Filtrer circuit / balises" oninput="render()"></div><div class="table" id="table"></div><button class="g wide" onclick="exportCSV()">⬇ Export CSV</button></div></div>
@@ -20,7 +23,7 @@
 <footer class="footer">Nicolas HAYER - Université de Poitiers - 2026</footer></main>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 <script>
-const K="co-v5",R="co-v5-race",S="co-v5-results";
+const K="co-v7",R="co-v7-race",S="co-v7-results";
 let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),timer=null;
 const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 function show(x){$("participant").classList.toggle("hidden",x!=="participant");$("manager").classList.toggle("hidden",x!=="manager");$("participantBtn").className="mode "+(x==="participant"?"active-participant":"inactive");$("managerBtn").className="mode "+(x==="manager"?"active-manager":"inactive");if(x==="manager")checkLogin()}
@@ -36,8 +39,33 @@ const urlTitle=params.get("title")||"";
 if(urlDate){session={id:urlDate,date:urlDate,title:urlTitle||session?.title||""};localStorage.setItem(K,JSON.stringify(session));}
 
 
-async function checkLogin(){try{let r=await fetch("/api/me");let d=await r.json();if(d.admin){$("loginCard").classList.add("hidden");$("managerContent").classList.remove("hidden");loadSession();}else{$("loginCard").classList.remove("hidden");$("managerContent").classList.add("hidden");}}catch(e){msg("loginMsg","Impossible de vérifier la connexion.","err")}}
-async function login(){let user=$("loginUser").value.trim(),password=$("loginPass").value;try{let r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user,password})});let d=await r.json();if(!r.ok)return msg("loginMsg",d.error||"Connexion impossible.","err");$("loginPass").value="";checkLogin();}catch(e){msg("loginMsg","Connexion impossible.","err")}}
+async function checkLogin(){
+  try{
+    let r=await fetch("/api/me",{credentials:"same-origin"});
+    let d=await r.json();
+    if(d.admin){
+      $("loginCard").classList.add("hidden");
+      $("managerContent").classList.remove("hidden");
+      loadSession();
+    }else{
+      $("loginCard").classList.remove("hidden");
+      $("managerContent").classList.add("hidden");
+    }
+  }catch(e){
+    msg("loginMsg","Impossible de vérifier la connexion.","err");
+  }
+}
+async function login(){
+  let user=$("loginUser").value.trim(),password=$("loginPass").value;
+  try{
+    let r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify({user,password})});
+    let d=await r.json();
+    if(!r.ok)return msg("loginMsg",d.error||"Connexion impossible.","err");
+    $("loginPass").value="";
+    await checkLogin();
+  }catch(e){msg("loginMsg","Connexion impossible.","err");}
+}
+async function logout(){try{await fetch("/api/logout",{method:"POST",credentials:"same-origin"})}catch(e){} show("manager");}
 function fillParticipantSession(){
   $("pdate").value=session?.date||urlDate||todayISO();
   $("ptitle").value=session?.title||urlTitle||$("ptitle").value||"";

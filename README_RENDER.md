@@ -1,17 +1,9 @@
-# Course d.orientation – V6 Render
+# Déploiement Render
 
-Version V6 corrigée pour Render + Turso.
+Root Directory : vide (les fichiers sont à la racine).
+Build Command : npm install
+Start Command : npm start
 
-## Correction principale
-La date et le nom de séance sont désormais réellement associés à chaque résultat et affichés dans le gestionnaire. Les colonnes `session_date` et `session_title` sont ajoutées automatiquement à la base existante.
+Variables : TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, ADMIN_USER, ADMIN_PASSWORD, SESSION_SECRET.
 
-Le gestionnaire affiche clairement la séance active et la date. Les résultats synchronisés conservent aussi ces informations.
-
-## Déploiement Render
-- Root Directory : laisser vide si les fichiers sont à la racine du dépôt
-- Build Command : `npm install`
-- Start Command : `npm start`
-- Variables : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
-
-## Important
-Ne pas mettre les secrets Turso dans GitHub.
+Après mise à jour, faire Manual Deploy -> Deploy latest commit si le redéploiement automatique n'a pas lieu.
