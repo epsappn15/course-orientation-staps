@@ -1,5 +1,5 @@
-const C="co-v20-cache";
-const OLD=["co-v2-cache","co-v2-fix1-cache","co-v3-fix1-cache","co-v4-cache","co-v5-cache","co-v6-cache","co-v7-cache","co-v8-cache","co-v9-cache","co-v12-cache","co-v16-cache"];
+const C="co-v21-cache";
+const OLD=["co-v2-cache","co-v2-fix1-cache","co-v3-fix1-cache","co-v4-cache","co-v5-cache","co-v6-cache","co-v7-cache","co-v8-cache","co-v9-cache","co-v12-cache","co-v21-cache"];
 const A=["./","./index.html","./manifest.json","./logo-suaps.png","./logo-staps.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(Promise.all(OLD.map(x=>caches.delete(x))).then(()=>self.clients.claim())));
