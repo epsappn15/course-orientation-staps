@@ -1,4 +1,4 @@
-# Course d'orientation — V23
+# Course d'orientation — V24
 
 Correction de la V22 :
 - authentification gestionnaire explicitement transmise sur toutes les requêtes de gestion ;
