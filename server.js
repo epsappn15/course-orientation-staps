@@ -20,13 +20,21 @@ async function init(){
 }
 const get=async(k,d='')=>(await one('SELECT value FROM settings WHERE key=?',[k]))?.value??d;
 const clean=(v,n=120)=>String(v??'').trim().slice(0,n), id=()=>crypto.randomBytes(10).toString('hex');
-const app=express();app.set('trust proxy',1);app.use(express.json({limit:'200kb'}));app.use(cookieSession({name:'co_admin',keys:[process.env.SESSION_SECRET||'change-me-in-render'],httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',maxAge:8*3600*1000}));app.use(express.static(path.join(__dirname,'public'),{setHeaders:(res,file)=>{if(file.endsWith('index.html')||file.endsWith('sw.js')){res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.setHeader('Pragma','no-cache');res.setHeader('Expires','0')}}}));
+const app=express();app.set('trust proxy',1);app.use(express.json({limit:'200kb'}));
+const AUTH_SECRET=process.env.SESSION_SECRET||'change-me-in-render';
+const b64=s=>Buffer.from(s).toString('base64url');
+const sign=s=>crypto.createHmac('sha256',AUTH_SECRET).update(s).digest('base64url');
+const makeToken=()=>{const p=b64(JSON.stringify({admin:true,exp:Date.now()+8*3600*1000}));return p+'.'+sign(p)};
+const validToken=t=>{try{const [p,sig]=String(t||'').split('.');if(!p||!sig||sign(p)!==sig)return false;const x=JSON.parse(Buffer.from(p,'base64url').toString());return x.admin===true&&x.exp>Date.now()}catch(e){return false}};
+const getCookie=(req,name)=>{const h=req.headers.cookie||'';for(const part of h.split(';')){const i=part.indexOf('=');if(i<0)continue;const k=part.slice(0,i).trim();if(k===name)return decodeURIComponent(part.slice(i+1).trim())}return ''};
+const setAuthCookie=(res,token)=>res.setHeader('Set-Cookie',`co_admin_token=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800; ${process.env.NODE_ENV==='production'?'Secure;':''}`);
+const clearAuthCookie=res=>res.setHeader('Set-Cookie','co_admin_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0;');app.use(express.static(path.join(__dirname,'public'),{setHeaders:(res,file)=>{if(file.endsWith('index.html')||file.endsWith('sw.js')){res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.setHeader('Pragma','no-cache');res.setHeader('Expires','0')}}}));
 app.get('/health',(q,r)=>r.json({ok:true,version:'V19'}));
 app.get('/api/version',(q,r)=>r.json({version:'V19',build:'2026-10-03'}));
-app.get('/api/me',(q,r)=>r.json({admin:!!q.session?.admin}));
-app.post('/api/login',async(q,r)=>{const expectedUser=process.env.ADMIN_USER||'enseignant';const expectedPassword=process.env.ADMIN_PASSWORD||'ChangezMoi123!';const user=clean(q.body.user,80);const password=String(q.body.password||'');if(user!==expectedUser||password!==expectedPassword)return r.status(401).json({error:'Identifiants incorrects'});q.session.admin=true;r.json({ok:true,admin:true})});
-app.post('/api/logout',(q,r)=>{q.session=null;r.json({ok:true});});
-const requireAdmin=(q,r,next)=>{if(q.session?.admin)return next();return r.status(401).json({error:'Accès gestionnaire requis'})};
+app.get('/api/me',(q,r)=>r.json({admin:validToken(getCookie(q,'co_admin_token'))}));
+app.post('/api/login',async(q,r)=>{const expectedUser=process.env.ADMIN_USER||'enseignant';const expectedPassword=process.env.ADMIN_PASSWORD||'ChangezMoi123!';const user=clean(q.body.user,80);const password=String(q.body.password||'');if(user!==expectedUser||password!==expectedPassword)return r.status(401).json({error:'Identifiants incorrects'});setAuthCookie(r,makeToken());r.json({ok:true,admin:true})});
+app.post('/api/logout',(q,r)=>{clearAuthCookie(r);r.json({ok:true});});
+const requireAdmin=(q,r,next)=>{if(validToken(getCookie(q,'co_admin_token')))return next();return r.status(401).json({error:'Accès gestionnaire requis'})};
 app.get('/api/sessions',requireAdmin,async(q,r)=>r.json(await all('SELECT id,session_date AS date,title FROM sessions WHERE active=1 ORDER BY session_date DESC')));
 app.post('/api/sessions',requireAdmin,async(q,r)=>{const date=clean(q.body.date,10),title=clean(q.body.title,120);if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)||!title)return r.status(400).json({error:'Date et nom obligatoires'});await exec('INSERT INTO sessions(id,session_date,title,created_at,active) VALUES(?,?,?,?,1) ON CONFLICT(id) DO UPDATE SET title=excluded.title,active=1',[date,date,title,Date.now()]);r.json({id:date,date,title})});
 app.get('/api/sessions/:id/results',requireAdmin,async(q,r)=>{const sid=clean(q.params.id,50),s=await one('SELECT * FROM sessions WHERE id=?',[sid]);if(!s)return r.status(404).json({error:'Séance introuvable'});r.json({session:s,results:await all('SELECT * FROM races WHERE session_id=? ORDER BY start_at',[sid])})});
