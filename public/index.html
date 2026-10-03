@@ -1,9 +1,9 @@
 <!doctype html><html lang="fr"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#a90818">
-<title>Course d'orientation — V24</title><link rel="manifest" href="manifest.json"><style>
+<title>Course d'orientation — V25</title><link rel="manifest" href="manifest.json"><style>
 :root{--r:#a90818;--b:#075d8d;--n:#123f5e;--bg:#f5f6f7;--line:#dfe5e8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial;color:#202426}header{background:linear-gradient(110deg,#a90818,#c40d21);padding:9px 15px;border-bottom:5px solid var(--b)}.logos{max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}.logos img{height:62px;max-width:46%;object-fit:contain}.logos img:last-child{background:#fff;border-radius:5px;padding:4px}.wrap{max-width:900px;margin:20px auto;padding:0 15px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:21px;margin-bottom:15px}h1,h2{color:var(--n)}label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}input{width:100%;padding:12px;border:1px solid #cbd4d9;border-radius:10px;font-size:16px}button{border:0;border-radius:10px;padding:13px 15px;font-weight:700;cursor:pointer}.r{background:var(--r);color:#fff}.b{background:var(--b);color:#fff}.g{background:#eaf0f4;color:var(--n)}.mode{width:100%;border:2px solid transparent;transition:.15s}.mode.active-participant{background:var(--r);color:#fff;border-color:#7d0713;box-shadow:0 0 0 3px #a9081826}.mode.active-manager{background:var(--b);color:#fff;border-color:#04486c;box-shadow:0 0 0 3px #075d8d26}.mode.inactive{background:#eaf0f4;color:var(--n)}.wide{width:100%;margin-top:11px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.status{padding:13px;border-radius:10px;background:#edf4f8;margin-top:12px}.ok{background:#e8f4ec}.err{background:#fde8e8;color:#8b111d}.timer{text-align:center;font-size:40px;font-weight:800;color:var(--r);margin:12px}.hidden{display:none!important}.qr{text-align:center}.qr img{max-width:100%;width:300px}.small{font-size:12px;color:#69747b}.table{overflow:auto}table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{font-size:11px;color:#69747b;text-transform:uppercase}.stat{display:inline-block;background:#f4f7f8;border-radius:10px;padding:10px;margin:4px}.footer{text-align:center;color:#777;font-size:12px;padding:0 0 20px}@media(max-width:600px){.grid{grid-template-columns:1fr}.logos img{height:48px}.logos{gap:8px}}
 </style></head><body><header><div class="logos"><img src="logo-suaps.png" alt="SUAPS Université de Poitiers"><img src="logo-staps.png" alt="STAPS Université de Poitiers"></div></header><main class="wrap">
-<div class="card"><h1>Course d'orientation</h1><p class="small"><b>Version V24</b></p><p id="network" class="small"></p><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
+<div class="card"><h1>Course d'orientation</h1><p class="small"><b>Version V25</b></p><p id="network" class="small"></p><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
 
 <section id="participant">
 <div class="card"><h2>Ma séance</h2><div class="grid"><div><label>Date de séance</label><input type="date" id="pdate"></div><div><label>Nom de la séance</label><input id="ptitle" placeholder="Ex. CO STAPS"></div></div>
@@ -27,10 +27,11 @@
 <div class="card"><h2>📱 Accès des participants</h2><div id="sessionQr" class="qr"></div><p class="small">Le lien et le QR préremplissent automatiquement la date et le nom de la séance.</p></div>
 <div class="card"><h2>Séance active</h2><div id="active"></div></div>
 <div class="card"><h2>👥 Suivi en direct</h2><div id="liveStats"></div><div id="liveNow" class="status"></div></div>
+<div class="card"><h2>📷 Récupérer un résultat par QR</h2><p class="small">Si un participant n’a pas pu synchroniser son résultat, scanne son QR avec cet espace gestionnaire.</p><div class="grid"><button class="b" type="button" onclick="startQrScanner()">📷 Scanner avec la caméra</button><label style="margin:0"><span class="small">ou choisir une image QR</span><input id="qrFile" type="file" accept="image/*" onchange="decodeQrFile(event)"></label></div><video id="qrVideo" class="hidden" playsinline style="width:100%;max-width:420px;margin-top:12px;border-radius:12px"></video><button id="stopQr" class="g wide hidden" type="button" onclick="stopQrScanner()">Arrêter le scanner</button><label>Coller le contenu du QR (secours)</label><input id="qrPayload" placeholder="COR3...."><button class="r wide" type="button" onclick="recoverQr()">Récupérer le résultat</button><div id="qrRecoverMsg"></div></div>
 <div class="card"><h2>📋 Résultats</h2><div id="stats"></div><div class="grid"><input id="fc" placeholder="Filtrer classe" oninput="render()"><input id="fco" placeholder="Filtrer circuit / balises" oninput="render()"></div><div class="table" id="table"></div><button class="g wide" onclick="exportCSV()">⬇ Export CSV</button><button class="g wide" onclick="clearManagerHistory()">🗑️ Effacer les résultats de cette séance</button><p class="small">Cette action supprime définitivement les résultats enregistrés sur le serveur pour la séance active.</p></div></div>
 </section>
 <footer class="footer">Nicolas HAYER - Université de Poitiers - 2026</footer></main>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 const K="co-v16-session",R="co-v16-race",S="co-v16-results",H="co-v16-history";
 function apiFetch(url,init={}){const h=new Headers(init.headers||{});const token=localStorage.getItem("co_admin_token");if(token)h.set("Authorization","Bearer "+token);return fetch(url,{...init,headers:h,cache:init.cache||"no-store"});}
@@ -128,7 +129,7 @@ async function start(){
   session=x;localStorage.setItem(K,JSON.stringify(session));
   let a={id:crypto.randomUUID(),session_id:session.id,session_date:session.date,session_title:session.title,
     first_name:$("first").value.trim(),last_name:$("last").value.trim(),class_name:$("cls").value.trim(),
-    course:$("course").value.trim(),start_at:Date.now(),finish_at:null,updated_at:Date.now()};
+    course:$("course").value.trim(),start_at:Date.now(),finish_at:null,updated_at:Date.now(),server_synced_at:0};
   race=a;localStorage.setItem(R,JSON.stringify(a));$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000);
   msg("pmsg",`Séance <b>${esc(session.title)}</b> du <b>${session.date}</b><br>Départ enregistré à <b>${clock(a.start_at)}</b>`,"ok");sync();
 }
@@ -149,18 +150,20 @@ async function makeQR(){
 }
 async function sync(){
   if(!navigator.onLine||!race)return;
+  if(Number(race.server_synced_at||0)>=Number(race.updated_at||0))return;
   try{
     let rr=await fetch("/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({results:[race]})});
-    if(rr.ok){let d=await rr.json();if(d.ok&&d.synced)msg("pmsg",(race.finish_at?"Résultat":"Départ")+" synchronisé automatiquement.","ok")}
+    if(rr.ok){let d=await rr.json();if(d.ok){race.server_synced_at=Date.now();localStorage.setItem(R,JSON.stringify(race));if(d.synced)msg("pmsg",(race.finish_at?"Résultat":"Départ")+" synchronisé automatiquement.","ok")}}
   }catch(e){}
 }
 async function refresh(){
   if(!navigator.onLine||!session)return;
   try{
-    let r=await apiFetch("/api/sessions/"+encodeURIComponent(session.id)+"/results");
+    let r=await apiFetch("/api/sessions/"+encodeURIComponent(session.id)+"/live");
     if(r.ok){let d=await r.json();results=d.results||[];localStorage.setItem(S,JSON.stringify(results));render()}
   }catch(e){}
 }
+
 function render(){
   let a=results.slice();if(session)a=a.filter(x=>x.session_id===session.id);
   let fc=($("fc")?.value||"").toLowerCase(),fco=($("fco")?.value||"").toLowerCase();
@@ -172,6 +175,18 @@ function render(){
   $("table").innerHTML=a.length?`<div class="small sessionline">Séance : <b>${esc(session?.title||"")}</b> — Date : <b>${esc(session?.date||"")}</b></div><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Arrivée</th><th>Temps</th></tr>${a.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td>${x.finish_at?clock(x.finish_at):"—"}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"En course"}</b></td></tr>`).join("")}</table>`:"<p class=small>Aucun résultat.</p>"
 }
 function updateLiveClocks(){document.querySelectorAll("[data-live-start]").forEach(e=>e.textContent=dur(Date.now()-Number(e.dataset.liveStart)));}
+let qrStream=null,qrScanTimer=null;
+async function startQrScanner(){
+  const video=$("qrVideo"),stop=$("stopQr"); if(!video)return;
+  if(!navigator.mediaDevices?.getUserMedia)return msg("qrRecoverMsg","La caméra n’est pas disponible sur cet appareil. Utilise le champ de secours ou une image QR.","err");
+  try{qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=qrStream;video.classList.remove("hidden");stop.classList.remove("hidden");await video.play();
+    if("BarcodeDetector" in window){const detector=new BarcodeDetector({formats:["qr_code"]});const scan=async()=>{if(!qrStream)return;try{const codes=await detector.detect(video);if(codes[0]?.rawValue){$("qrPayload").value=codes[0].rawValue;await recoverQr();stopQrScanner();return}}catch(e){}qrScanTimer=setTimeout(scan,350)};scan();}
+    else msg("qrRecoverMsg","Le navigateur ne permet pas le scan caméra automatique. Utilise une image QR ou colle le contenu du QR.","status");
+  }catch(e){msg("qrRecoverMsg","Impossible d’accéder à la caméra. Vérifie l’autorisation du navigateur.","err")}
+}
+function stopQrScanner(){if(qrScanTimer){clearTimeout(qrScanTimer);qrScanTimer=null}if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null}const v=$("qrVideo"),b=$("stopQr");if(v){v.pause();v.srcObject=null;v.classList.add("hidden")}if(b)b.classList.add("hidden")}
+function decodeQrFile(ev){const f=ev.target.files?.[0];if(!f||typeof jsQR!=="function")return msg("qrRecoverMsg","Lecture d’image QR indisponible. Colle le contenu du QR dans le champ ci-dessous.","err");const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),ctx=c.getContext("2d",{willReadFrequently:true});const max=1600,scale=Math.min(1,max/Math.max(img.width,img.height));c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);ctx.drawImage(img,0,0,c.width,c.height);const d=ctx.getImageData(0,0,c.width,c.height),code=jsQR(d.data,d.width,d.height,{inversionAttempts:"attemptBoth"});if(!code)return msg("qrRecoverMsg","Aucun QR lisible dans cette image.","err");$("qrPayload").value=code.data;recoverQr()};img.src=rd.result};rd.readAsDataURL(f)}
+async function recoverQr(){const payload=$("qrPayload")?.value.trim();if(!payload)return msg("qrRecoverMsg","Scanne ou colle d’abord un QR de récupération.","err");try{const r=await apiFetch("/api/recover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"QR invalide");results=[d.result,...results.filter(x=>x.id!==d.result.id)];localStorage.setItem(S,JSON.stringify(results));render();msg("qrRecoverMsg",`Résultat récupéré pour <b>${esc(d.result.first_name)} ${esc(d.result.last_name)}</b>.`,"ok");$("qrPayload").value=""}catch(e){msg("qrRecoverMsg",esc(e.message),"err")}}
 function exportCSV(){
   let a=results.filter(x=>!session||x.session_id===session.id),o=["Prénom;Nom;Classe;Circuit / balises;Départ;Arrivée;Temps"];
   a.forEach(x=>o.push([x.first_name,x.last_name,x.class_name,x.course,clock(x.start_at),clock(x.finish_at),x.finish_at?dur(x.finish_at-x.start_at):""].map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(";")));
@@ -182,18 +197,8 @@ if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
 net();fillParticipantSession();showServerVersion();renderHistory();checkAdmin();
 if(race&&!race.finish_at){$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000)}
 if(race&&race.finish_at)makeQR();setTimeout(renderSessionQR,700);
-setInterval(()=>{sync();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},4000);setInterval(updateLiveClocks,1000);render();
+setInterval(()=>{sync();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},2000);setInterval(updateLiveClocks,1000);render();
 </script>
 
-<script>
-if("serviceWorker" in navigator){
-  let reloaded=false;
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{
-    if(!reloaded){reloaded=true;location.reload();}
-  });
-  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"})
-    .then(reg=>reg.update())
-    .catch(()=>{});
-}
-</script>
+<script>if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload());navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});}</script>
 </body></html>
