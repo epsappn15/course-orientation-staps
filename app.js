@@ -56,13 +56,17 @@ function showSessionLink(){
   renderSessionQR();
 }
 async function copySessionLink(){const v=$("shareLink")?.value||"";try{await navigator.clipboard.writeText(v);msg("gmsg","Lien copié dans le presse-papiers.","ok")}catch(e){$("shareLink").select();msg("gmsg","Sélectionne le lien puis copie-le.","status")}}
+async function loadSessionHistory(){const e=$("sessionHistory");if(!e||!localStorage.getItem('co_admin_token'))return;try{const r=await apiFetch('/api/sessions');if(!r.ok)throw new Error('Impossible de charger les séances');const list=await r.json();const now=new Date();const rows=list.map(x=>{const future=new Date(x.date+'T23:59:59')>=now;return {...x,future}});rows.sort((a,b)=>String(a.date).localeCompare(String(b.date)) || String(a.title).localeCompare(String(b.title)));if(!rows.length){e.innerHTML='<p class="small">Aucune séance enregistrée.</p>';return}e.innerHTML='<table><tr><th>Date</th><th>Séance</th><th>État</th><th>Actions</th></tr>'+rows.map(x=>`<tr><td>${esc(x.date)}</td><td><b>${esc(x.title)}</b></td><td>${x.active===0?'⚪ Archivée':(x.future?'🟡 Programmée':'🔵 Terminée / passée')}</td><td><button class="g" type="button" onclick="openSessionFromHistory('${esc(x.id)}')">Ouvrir</button> <button class="g" type="button" onclick="duplicateSession('${esc(x.id)}')">Dupliquer</button> ${x.active!==0?`<button class="g" type="button" onclick="archiveSession('${esc(x.id)}')">Archiver</button>`:''}</td></tr>`).join('')+'</table>'}catch(e){e.innerHTML='<p class="small err">'+esc(e.message)+'</p>'}}
+async function openSessionFromHistory(id){try{const r=await apiFetch('/api/sessions/'+encodeURIComponent(id)+'/config');if(!r.ok)throw new Error('Séance introuvable');const d=await r.json();const x=d.session;session={id:x.id,date:x.session_date,title:x.title};localStorage.setItem(K,JSON.stringify(session));loadSession();loadRoster();loadSessionHistory();msg('gmsg','Séance ouverte.','ok')}catch(e){msg('sessionHistoryMsg',esc(e.message),'err')}}
+async function duplicateSession(id){const date=prompt('Nouvelle date (AAAA-MM-JJ) :',todayISO());if(!date)return;const title=prompt('Nom de la nouvelle séance :','');if(title===null)return;try{const r=await apiFetch('/api/sessions/'+encodeURIComponent(id)+'/duplicate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,title})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Duplication impossible');await openSessionFromHistory(d.id);msg('gmsg','Séance dupliquée et ouverte.','ok')}catch(e){msg('sessionHistoryMsg',esc(e.message),'err')}}
+async function archiveSession(id){if(!confirm('Archiver cette séance ? Elle restera conservée mais ne sera plus proposée aux participants.'))return;try{const r=await apiFetch('/api/sessions/'+encodeURIComponent(id)+'/archive',{method:'POST'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Archivage impossible');if(session?.id===id){session=null;localStorage.removeItem(K);$('active').innerHTML='<p class="small">Aucune séance active.</p>';$('sessionLink').innerHTML='';$('sessionQr').innerHTML='';}await loadSessionHistory();msg('gmsg','Séance archivée.','ok')}catch(e){msg('sessionHistoryMsg',esc(e.message),'err')}}
 function fillManagerSession(){
   if(session){$("gdate").value=session.date;$("gtitle").value=session.title;$("active").innerHTML=`<b>Séance active</b><br><strong>${esc(session.title)}</strong><br>${session.date}<br><span class=small>Identifiant : ${esc(session.id)}</span>`}
 }
 function loadSession(){
   if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
   if(!session){$("active").innerHTML="<p class=small>Aucune séance active. Crée-en une.</p>";return}
-  fillManagerSession(); showSessionLink(); loadSessionConfig(); refresh(); render();
+  fillManagerSession(); showSessionLink(); loadSessionConfig(); refresh(); render(); loadSessionHistory();
 }
 
 async function resolveSession(date,title){
@@ -82,7 +86,7 @@ async function create(){
   if(!d||!t)return msg("gmsg","Date et nom obligatoires","err");
   let x=await resolveSession(d,t);
   if(!x)return msg("gmsg","Impossible de créer la séance.","err");
-  session=x;localStorage.setItem(K,JSON.stringify(session));loadSession();loadRoster();showSessionLink();msg("gmsg","Séance prête.","ok");
+  session=x;localStorage.setItem(K,JSON.stringify(session));loadSession();loadRoster();showSessionLink();loadSessionHistory();msg("gmsg","Séance prête.","ok");
 }
 
 let startLocked=false,finishLocked=false;
