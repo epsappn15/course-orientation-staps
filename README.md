@@ -39,3 +39,13 @@ Base stable V29.4. Ajouts : télémétrie batterie/GPS, détection d'immobilité
 - Le code participant complet est désormais celui de la version sécurité, directement intégré à index.html.
 - Envoi de télémétrie batterie/GPS pendant chaque parcours et affichage gestionnaire via les champs races.
 - Version/cache PWA V30.3.
+
+
+## V31 — arrêt d'un coureur par le gestionnaire
+- Le gestionnaire peut arrêter manuellement un parcours encore en cours depuis le suivi en direct.
+- Une confirmation est demandée avant l'arrêt.
+- Le serveur enregistre l'heure réelle d'arrêt et `finish_reason=manager`.
+- Le participant est informé automatiquement dès que son téléphone retrouve le réseau.
+- Le parcours est alors clôturé côté participant, son GPS/télémétrie s'arrête et il peut ensuite lancer un nouveau parcours.
+- Le serveur refuse les nouvelles positions GPS et télémétries après clôture.
+- Les arrêts gestionnaire sont distingués des arrivées normales.

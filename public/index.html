@@ -3,7 +3,7 @@
 <title>Suivi Course d'orientation</title><link rel="manifest" href="manifest.json"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>
 :root{--r:#a90818;--b:#075d8d;--n:#123f5e;--bg:#f5f6f7;--line:#dfe5e8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial;color:#202426}header{background:linear-gradient(110deg,#a90818,#c40d21);padding:9px 15px;border-bottom:5px solid var(--b)}.logos{max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}.logos img{height:62px;max-width:46%;object-fit:contain}.logos img:last-child{background:#fff;border-radius:5px;padding:4px}.wrap{max-width:900px;margin:20px auto;padding:0 15px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:21px;margin-bottom:15px}h1,h2{color:var(--n)}label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}input{width:100%;padding:12px;border:1px solid #cbd4d9;border-radius:10px;font-size:16px}button{border:0;border-radius:10px;padding:13px 15px;font-weight:700;cursor:pointer}.r{background:var(--r);color:#fff}.b{background:var(--b);color:#fff}.g{background:#eaf0f4;color:var(--n)}.mode{width:100%;border:2px solid transparent;transition:.15s}.mode.active-participant{background:var(--r);color:#fff;border-color:#7d0713;box-shadow:0 0 0 3px #a9081826}.mode.active-manager{background:var(--b);color:#fff;border-color:#04486c;box-shadow:0 0 0 3px #075d8d26}.mode.inactive{background:#eaf0f4;color:var(--n)}.wide{width:100%;margin-top:11px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.status{padding:13px;border-radius:10px;background:#edf4f8;margin-top:12px}.ok{background:#e8f4ec}.err{background:#fde8e8;color:#8b111d}.timer{text-align:center;font-size:40px;font-weight:800;color:var(--r);margin:12px}.hidden{display:none!important}.qr{text-align:center}.qr img{max-width:100%;width:300px}.small{font-size:12px;color:#69747b}.table{overflow:auto}table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{font-size:11px;color:#69747b;text-transform:uppercase}.stat{display:inline-block;background:#f4f7f8;border-radius:10px;padding:10px;margin:4px}.footer{text-align:center;color:#777;font-size:12px;padding:0 0 20px}.map{height:480px;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:12px}.gps-legend{font-size:12px;color:#69747b;margin-top:8px}@media(max-width:600px){.grid{grid-template-columns:1fr}.logos img{height:48px}.logos{gap:8px}}
 </style></head><body><header><div class="logos"><img src="logo-suaps.png" alt="SUAPS Université de Poitiers"><img src="logo-staps.png" alt="STAPS Université de Poitiers"></div></header><main class="wrap">
-<div class="card"><h1>Suivi Course d'orientation</h1><p class="small"><b>Version V30.1</b></p><p id="network" class="small"></p><div id="gpsStatus" class="status">📍 Le suivi GPS est activé uniquement pendant un parcours et nécessite votre autorisation de localisation.</div><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
+<div class="card"><h1>Suivi Course d'orientation</h1><p class="small"><b>Version V31</b></p><p id="network" class="small"></p><div id="gpsStatus" class="status">📍 Le suivi GPS est activé uniquement pendant un parcours et nécessite votre autorisation de localisation.</div><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
 
 <section id="participant">
 <div class="card"><h2>Ma séance</h2><div class="grid"><div><label>Date de séance</label><input type="date" id="pdate"></div><div><label>Nom de la séance</label><input id="ptitle" placeholder="Ex. CO STAPS"></div></div>
@@ -197,12 +197,32 @@ async function makeQR(){
   const payload="COR2."+btoa(unescape(encodeURIComponent(JSON.stringify(race))));
   if(typeof QRCode!=="undefined")QRCode.toDataURL(payload,{width:420,margin:1},(e,u)=>{if(!e){$("qrCard").classList.remove("hidden");$("qr").src=u;}});
 }
+async function applyRemoteFinish(serverRace){
+  if(!serverRace||!serverRace.finish_at||!race||race.id!==serverRace.id||race.finish_at)return;
+  race.finish_at=Number(serverRace.finish_at);race.updated_at=Number(serverRace.updated_at)||Date.now();race.finish_reason=serverRace.finish_reason||'manager';race.server_synced_at=race.updated_at;
+  localStorage.setItem(R,JSON.stringify(race));clearInterval(timer);timer=null;stopGps();$('run').classList.add('hidden');
+  history=[race,...history.filter(x=>x.id!==race.id)].slice(0,100);localStorage.setItem(H,JSON.stringify(history));renderHistory();makeQR();setRaceButtons(false);
+  msg('pmsg',`⏹️ <b>Parcours arrêté par le gestionnaire.</b><br>Temps enregistré : <b>${dur(race.finish_at-race.start_at)}</b>`,'err');
+}
+async function checkRemoteRaceStatus(){
+  if(!race||race.finish_at||!navigator.onLine)return;
+  try{const r=await fetch('/api/races/'+encodeURIComponent(race.id)+'/status',{cache:'no-store'});if(!r.ok)return;const d=await r.json();if(d.race?.finish_at)await applyRemoteFinish(d.race)}catch(e){}
+}
+async function managerStopRace(id){
+  const x=results.find(r=>r.id===id);if(!x||x.finish_at)return;
+  const who=(x.first_name+' '+x.last_name).trim();
+  if(!window.confirm(`Arrêter le parcours de ${who} ?\n\nLe temps sera arrêté maintenant et le parcours sera marqué « Arrêté par le gestionnaire ».`))return;
+  try{const r=await apiFetch('/api/races/'+encodeURIComponent(id)+'/manager-stop',{method:'POST',headers:{'Content-Type':'application/json'}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Impossible d’arrêter le parcours');
+    const i=results.findIndex(v=>v.id===id);if(i>=0&&d.race)results[i]=d.race;localStorage.setItem(S,JSON.stringify(results));render();refreshGpsMap();
+    msg('gmsg',`Parcours de ${esc(who)} arrêté par le gestionnaire à ${clock(d.race?.finish_at||Date.now())}.`,'ok');
+  }catch(e){msg('gmsg','Impossible d’arrêter le parcours : '+esc(e.message),'err')}
+}
 async function sync(){
   if(!navigator.onLine||!race)return;
   if(Number(race.server_synced_at||0)>=Number(race.updated_at||0))return;
   try{
     let rr=await fetch("/api/sync",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({results:[race]})});
-    if(rr.ok){let d=await rr.json();if(d.ok){race.server_synced_at=Date.now();localStorage.setItem(R,JSON.stringify(race));if(d.synced)msg("pmsg",(race.finish_at?"Résultat":"Départ")+" synchronisé automatiquement.","ok")}}
+    if(rr.ok){let d=await rr.json();if(d.ok){if(Array.isArray(d.authoritative)&&d.authoritative[0]){await applyRemoteFinish(d.authoritative[0]);return}race.server_synced_at=Date.now();localStorage.setItem(R,JSON.stringify(race));if(d.synced)msg("pmsg",(race.finish_at?"Résultat":"Départ")+" synchronisé automatiquement.","ok")}}
   }catch(e){}
 }
 async function refresh(){
@@ -228,7 +248,7 @@ function render(){
   let done=a.filter(x=>x.finish_at),run=a.filter(x=>!x.finish_at),avg=done.length?done.reduce((s,x)=>s+x.finish_at-x.start_at,0)/done.length:0;
   $("stats").innerHTML=`<span class=stat><b>${a.length}</b> participants</span><span class=stat><b>${run.length}</b> en course</span><span class=stat><b>${done.length}</b> arrivés</span><span class=stat><b>${done.length?dur(avg):"—"}</b> moyenne</span>`;
   if($("liveStats")) $("liveStats").innerHTML=`<span class=stat><b>${run.length}</b> 🏃 en course</span><span class=stat><b>${done.length}</b> 🏁 arrivés</span>`; renderSecurityTable();
-  if($("liveNow")) $("liveNow").innerHTML=run.length?'<b>Participants encore en course</b><div class="table"><table><tr><th>Participant</th><th>Classe</th><th>Circuit / balises</th><th>Départ</th><th>Temps écoulé</th></tr>'+run.map(x=>`<tr><td><b>${esc(x.first_name+' '+x.last_name)}</b></td><td>${esc(x.class_name)}</td><td><b>${esc(x.course||'—')}</b></td><td>${clock(x.start_at)}</td><td><b data-live-start="${x.start_at}">${dur(Date.now()-x.start_at)}</b></td></tr>`).join('')+'</table></div>':'<span class="small">Aucun participant actuellement en course.</span>';
+  if($('liveNow')) $('liveNow').innerHTML=run.length?'<b>Participants encore en course</b><div class="table"><table><tr><th>Participant</th><th>Classe</th><th>Circuit / balises</th><th>Départ</th><th>Temps écoulé</th><th>Action</th></tr>'+run.map(x=>`<tr><td><b>${esc(x.first_name+' '+x.last_name)}</b></td><td>${esc(x.class_name)}</td><td><b>${esc(x.course||'—')}</b></td><td>${clock(x.start_at)}</td><td><b data-live-start="${x.start_at}">${dur(Date.now()-x.start_at)}</b></td><td><button class="r" type="button" onclick="managerStopRace('${esc(x.id)}')">⏹ Arrêter</button></td></tr>`).join('')+'</table></div>':'<span class="small">Aucun participant actuellement en course.</span>';
   $("table").innerHTML=a.length?`<div class="small sessionline">Séance : <b>${esc(session?.title||"")}</b> — Date : <b>${esc(session?.date||"")}</b></div><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Arrivée</th><th>Temps</th></tr>${a.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td>${x.finish_at?clock(x.finish_at):"—"}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"En course"}</b></td></tr>`).join("")}</table>`:"<p class=small>Aucun résultat.</p>"
 }
 function updateManagerAlerts(tracks){
@@ -296,7 +316,7 @@ if(localStorage.getItem('co_admin_token'))loadRoster();
 if(race&&!race.finish_at){$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000);setRaceButtons(true);startGps()}
 else {setRaceButtons(false);updateParticipantTelemetry()}
 if(race&&race.finish_at)makeQR();setTimeout(()=>{initGpsMap();map?.invalidateSize();refreshGpsMap();renderSessionQR()},700);
-window.addEventListener("online",flushGpsQueue);setInterval(()=>{sync();flushGpsQueue();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},2000);setInterval(()=>{if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refreshGpsMap()},5000);setInterval(updateLiveClocks,1000);render();
+window.addEventListener("online",flushGpsQueue);setInterval(()=>{sync();checkRemoteRaceStatus();flushGpsQueue();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},2000);setInterval(()=>{if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refreshGpsMap()},5000);setInterval(updateLiveClocks,1000);render();
 </script>
 
 <script>if("serviceWorker"in navigator){navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload());navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>r.update()).catch(()=>{});}</script>

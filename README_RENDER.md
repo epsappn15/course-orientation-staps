@@ -17,3 +17,6 @@ Root Directory vide. Build: npm install. Start: npm start. Variables : TURSO_DAT
 - Le bouton d'arrivée est verrouillé dès le premier clic.
 - Chaque nouveau parcours reçoit un identifiant unique et une nouvelle heure de départ.
 - La synchronisation serveur reste idempotente grâce à l'identifiant unique du parcours.
+
+
+V31 : bouton gestionnaire « Arrêter » sur les coureurs en cours, arrêt serveur autoritaire et synchronisation du statut vers le téléphone participant.
