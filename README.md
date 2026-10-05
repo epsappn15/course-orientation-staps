@@ -21,3 +21,7 @@ Correction de l'effacement des résultats gestionnaire : endpoint POST dédié, 
 - Le gestionnaire dispose d'une carte OpenStreetMap avec dernière position et tracé de chaque parcours ayant transmis des positions.
 - Le GPS n'empêche jamais le chronomètre : si l'autorisation est refusée ou le GPS indisponible, le parcours continue normalement.
 - L'effacement des résultats d'une séance supprime également les positions GPS associées.
+
+
+### Correction zone de sécurité
+Le dessin de la zone de course est désormais interactif : cliquer sur « Dessiner la zone », placer au moins 3 points sur la carte, puis cliquer sur « Terminer la zone » (ou double-cliquer). La zone doit ensuite être enregistrée avec « Enregistrer les paramètres ».
