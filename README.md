@@ -13,3 +13,11 @@ Version V16 complète : chrono, historique participant, lien de séance, QR de s
 
 ## V18
 Correction de l'effacement des résultats gestionnaire : endpoint POST dédié, retour du nombre supprimé et gestion de session explicite.
+
+## V27 — suivi GPS live
+- Suivi GPS activé pendant chaque parcours participant, après autorisation du navigateur.
+- Position envoyée environ toutes les 5 secondes selon les mises à jour du GPS du téléphone.
+- Les positions sont conservées localement si le réseau est indisponible puis synchronisées au retour du réseau.
+- Le gestionnaire dispose d'une carte OpenStreetMap avec dernière position et tracé de chaque parcours ayant transmis des positions.
+- Le GPS n'empêche jamais le chronomètre : si l'autorisation est refusée ou le GPS indisponible, le parcours continue normalement.
+- L'effacement des résultats d'une séance supprime également les positions GPS associées.
