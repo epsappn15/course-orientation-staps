@@ -3,12 +3,12 @@
 <title>Suivi Course d'orientation</title><link rel="manifest" href="manifest.json"><style>
 :root{--r:#a90818;--b:#075d8d;--n:#123f5e;--bg:#f5f6f7;--line:#dfe5e8}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial;color:#202426}header{background:linear-gradient(110deg,#a90818,#c40d21);padding:9px 15px;border-bottom:5px solid var(--b)}.logos{max-width:900px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}.logos img{height:62px;max-width:46%;object-fit:contain}.logos img:last-child{background:#fff;border-radius:5px;padding:4px}.wrap{max-width:900px;margin:20px auto;padding:0 15px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:21px;margin-bottom:15px}h1,h2{color:var(--n)}label{display:block;font-weight:700;font-size:13px;margin:12px 0 5px}input{width:100%;padding:12px;border:1px solid #cbd4d9;border-radius:10px;font-size:16px}button{border:0;border-radius:10px;padding:13px 15px;font-weight:700;cursor:pointer}.r{background:var(--r);color:#fff}.b{background:var(--b);color:#fff}.g{background:#eaf0f4;color:var(--n)}.mode{width:100%;border:2px solid transparent;transition:.15s}.mode.active-participant{background:var(--r);color:#fff;border-color:#7d0713;box-shadow:0 0 0 3px #a9081826}.mode.active-manager{background:var(--b);color:#fff;border-color:#04486c;box-shadow:0 0 0 3px #075d8d26}.mode.inactive{background:#eaf0f4;color:var(--n)}.wide{width:100%;margin-top:11px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.status{padding:13px;border-radius:10px;background:#edf4f8;margin-top:12px}.ok{background:#e8f4ec}.err{background:#fde8e8;color:#8b111d}.timer{text-align:center;font-size:40px;font-weight:800;color:var(--r);margin:12px}.hidden{display:none!important}.qr{text-align:center}.qr img{max-width:100%;width:300px}.small{font-size:12px;color:#69747b}.table{overflow:auto}table{border-collapse:collapse;width:100%;min-width:720px}th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}th{font-size:11px;color:#69747b;text-transform:uppercase}.stat{display:inline-block;background:#f4f7f8;border-radius:10px;padding:10px;margin:4px}.footer{text-align:center;color:#777;font-size:12px;padding:0 0 20px}@media(max-width:600px){.grid{grid-template-columns:1fr}.logos img{height:48px}.logos{gap:8px}}
 </style></head><body><header><div class="logos"><img src="logo-suaps.png" alt="SUAPS Université de Poitiers"><img src="logo-staps.png" alt="STAPS Université de Poitiers"></div></header><main class="wrap">
-<div class="card"><h1>Suivi Course d'orientation</h1><p class="small"><b>Version V25</b></p><p id="network" class="small"></p><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
+<div class="card"><h1>Suivi Course d'orientation</h1><p class="small"><b>Version V26</b></p><p id="network" class="small"></p><div class="grid mode-buttons"><button id="participantBtn" class="mode active-participant" onclick="show('participant')">📱 Participant</button><button id="managerBtn" class="mode inactive" onclick="show('manager')">👨‍🏫 Gestionnaire</button></div></div>
 
 <section id="participant">
 <div class="card"><h2>Ma séance</h2><div class="grid"><div><label>Date de séance</label><input type="date" id="pdate"></div><div><label>Nom de la séance</label><input id="ptitle" placeholder="Ex. CO STAPS"></div></div>
 <label>Prénom</label><input id="first"><label>Nom</label><input id="last"><label>Classe</label><input id="cls"><label>Circuit / balises</label><input id="course" placeholder="Saisie libre">
-<button class="r wide" onclick="start()">▶ JE PARS</button><div id="run" class="hidden"><div class="timer" id="timer">00:00:00</div><button class="b wide" onclick="finish()">■ JE SUIS ARRIVÉ</button></div><div id="pmsg"></div></div>
+<button id="startBtn" class="r wide" onclick="start()">▶ JE PARS — NOUVEAU PARCOURS</button><div id="run" class="hidden"><div class="timer" id="timer">00:00:00</div><button id="finishBtn" class="b wide" onclick="finish()">■ JE SUIS ARRIVÉ</button></div><div id="pmsg"></div></div>
 <div class="card"><h2>📊 Mon historique</h2><p class="small">Les courses terminées sur ce téléphone sont conservées ici, même sans Internet.</p><div id="history"></div><button class="g wide" onclick="clearParticipantHistory()">🗑️ Effacer mon historique</button></div>
 <div class="card qr hidden" id="qrCard"><h2>Récupération manuelle</h2><p>À utiliser seulement si la synchronisation n'est pas possible.</p><img id="qr"><p class="small">Le QR sera lisible par l'application gestionnaire.</p></div>
 </section>
@@ -119,25 +119,42 @@ async function create(){
   session=x;localStorage.setItem(K,JSON.stringify(session));loadSession();showSessionLink();msg("gmsg","Séance prête.","ok");
 }
 
+let startLocked=false,finishLocked=false;
+function setRaceButtons(running){
+  const sb=$("startBtn"),fb=$("finishBtn");
+  if(sb){sb.disabled=!!running||startLocked;sb.style.opacity=sb.disabled?".6":"1";sb.textContent=running?"⏱️ PARCOURS EN COURS":"▶ JE PARS — NOUVEAU PARCOURS";}
+  if(fb){fb.disabled=!running||finishLocked;fb.style.opacity=fb.disabled?".6":"1";}
+}
 async function start(){
+  if(startLocked || race && !race.finish_at){
+    if(race && !race.finish_at) msg("pmsg","Un parcours est déjà en cours. Termine-le avant de démarrer un nouveau parcours.","status");
+    return;
+  }
+  startLocked=true; setRaceButtons(false);
   let d=$("pdate").value||todayISO(),t=$("ptitle").value.trim();
-  if(!d||!t)return msg("pmsg",`Date reçue : <b>${esc(d||"vide")}</b> — Nom reçu : <b>${esc(t||"vide")}</b><br>Renseigne la date et le nom de la séance.`,"err");
-  if([$("first").value.trim(),$("last").value.trim(),$("cls").value.trim(),$("course").value.trim()].some(x=>!x))
-    return msg("pmsg","Tous les champs sont obligatoires.","err");
+  if(!d||!t){startLocked=false;setRaceButtons(false);return msg("pmsg",`Date reçue : <b>${esc(d||"vide")}</b> — Nom reçu : <b>${esc(t||"vide")}</b><br>Renseigne la date et le nom de la séance.`,"err");}
+  if([$("first").value.trim(),$("last").value.trim(),$("cls").value.trim(),$("course").value.trim()].some(x=>!x)){
+    startLocked=false;setRaceButtons(false);return msg("pmsg","Tous les champs sont obligatoires.","err");
+  }
   let x=await resolveSession(d,t);
-  if(!x)return msg("pmsg","Impossible de préparer la séance.","err");
+  if(!x){startLocked=false;setRaceButtons(false);return msg("pmsg","Impossible de préparer la séance.","err");}
   session=x;localStorage.setItem(K,JSON.stringify(session));
+  let now=Date.now();
   let a={id:crypto.randomUUID(),session_id:session.id,session_date:session.date,session_title:session.title,
     first_name:$("first").value.trim(),last_name:$("last").value.trim(),class_name:$("cls").value.trim(),
-    course:$("course").value.trim(),start_at:Date.now(),finish_at:null,updated_at:Date.now(),server_synced_at:0};
-  race=a;localStorage.setItem(R,JSON.stringify(a));$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000);
-  msg("pmsg",`Séance <b>${esc(session.title)}</b> du <b>${session.date}</b><br>Départ enregistré à <b>${clock(a.start_at)}</b>`,"ok");sync();
+    course:$("course").value.trim(),start_at:now,finish_at:null,updated_at:now,server_synced_at:0};
+  race=a;localStorage.setItem(R,JSON.stringify(a));$("run").classList.remove("hidden");
+  finishLocked=false;startLocked=false;setRaceButtons(true);tick();timer=setInterval(tick,1000);
+  msg("pmsg",`Nouveau parcours enregistré pour <b>${esc(a.first_name)} ${esc(a.last_name)}</b><br>Séance <b>${esc(session.title)}</b> du <b>${session.date}</b><br>Départ enregistré à <b>${clock(a.start_at)}</b>`,"ok");sync();
 }
 function tick(){if(race)$("timer").textContent=dur(Date.now()-race.start_at)}
 function finish(){
-  if(!race)return;race.finish_at=Date.now();race.updated_at=Date.now();localStorage.setItem(R,JSON.stringify(race));clearInterval(timer);$("run").classList.add("hidden");
+  if(finishLocked||!race||race.finish_at)return;
+  finishLocked=true;setRaceButtons(true);
+  race.finish_at=Date.now();race.updated_at=Date.now();localStorage.setItem(R,JSON.stringify(race));clearInterval(timer);$("run").classList.add("hidden");
   history=[race,...history.filter(x=>x.id!==race.id)].slice(0,100);localStorage.setItem(H,JSON.stringify(history));renderHistory();
-  msg("pmsg",`Arrivée enregistrée : <b>${dur(race.finish_at-race.start_at)}</b>`,"ok");makeQR();sync();
+  msg("pmsg",`Arrivée enregistrée : <b>${dur(race.finish_at-race.start_at)}</b><br>Le parcours est terminé. Tu peux lancer un <b>nouveau parcours</b> quand tu le souhaites.`,"ok");makeQR();sync();
+  setRaceButtons(false);
 }
 async function makeQR(){
   if(!race)return;
@@ -195,7 +212,8 @@ function exportCSV(){
 if(!$("pdate").value) $("pdate").value=todayISO();
 if(!$("gdate").value) $("gdate").value=session?.date||todayISO();
 net();fillParticipantSession();showServerVersion();renderHistory();checkAdmin();
-if(race&&!race.finish_at){$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000)}
+if(race&&!race.finish_at){$("run").classList.remove("hidden");tick();timer=setInterval(tick,1000);setRaceButtons(true)}
+else {setRaceButtons(false)}
 if(race&&race.finish_at)makeQR();setTimeout(renderSessionQR,700);
 setInterval(()=>{sync();if($("managerContent")&&!$("managerContent").classList.contains("hidden"))refresh()},2000);setInterval(updateLiveClocks,1000);render();
 </script>
