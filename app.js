@@ -193,11 +193,50 @@ function render(){
   a=a.filter(x=>(!fc||String(x.class_name).toLowerCase().includes(fc))&&(!fco||String(x.course).toLowerCase().includes(fco)));
   let done=a.filter(x=>x.finish_at),run=a.filter(x=>!x.finish_at),avg=done.length?done.reduce((s,x)=>s+x.finish_at-x.start_at,0)/done.length:0;
   $("stats").innerHTML=`<span class=stat><b>${a.length}</b> participants</span><span class=stat><b>${run.length}</b> en course</span><span class=stat><b>${done.length}</b> arrivés</span><span class=stat><b>${done.length?dur(avg):"—"}</b> moyenne</span>`;
-  if($("liveStats")) $("liveStats").innerHTML=`<span class=stat><b>${run.length}</b> 🏃 en course</span><span class=stat><b>${done.length}</b> 🏁 arrivés</span>`;
+  if($("liveStats")) $("liveStats").innerHTML=`<span class=stat><b>${run.length}</b> 🏃 en course</span><span class=stat><b>${done.length}</b> 🏁 arrivés</span>`; renderSecurityTable();
   if($("liveNow")) $("liveNow").innerHTML=run.length?'<b>Participants encore en course</b><div class="table"><table><tr><th>Participant</th><th>Classe</th><th>Circuit / balises</th><th>Départ</th><th>Temps écoulé</th></tr>'+run.map(x=>`<tr><td><b>${esc(x.first_name+' '+x.last_name)}</b></td><td>${esc(x.class_name)}</td><td><b>${esc(x.course||'—')}</b></td><td>${clock(x.start_at)}</td><td><b data-live-start="${x.start_at}">${dur(Date.now()-x.start_at)}</b></td></tr>`).join('')+'</table></div>':'<span class="small">Aucun participant actuellement en course.</span>';
   $("table").innerHTML=a.length?`<div class="small sessionline">Séance : <b>${esc(session?.title||"")}</b> — Date : <b>${esc(session?.date||"")}</b></div><table><tr><th>Participant</th><th>Classe</th><th>Circuit</th><th>Départ</th><th>Arrivée</th><th>Temps</th></tr>${a.map(x=>`<tr><td>${esc(x.first_name+" "+x.last_name)}</td><td>${esc(x.class_name)}</td><td>${esc(x.course)}</td><td>${clock(x.start_at)}</td><td>${x.finish_at?clock(x.finish_at):"—"}</td><td><b>${x.finish_at?dur(x.finish_at-x.start_at):"En course"}</b></td></tr>`).join("")}</table>`:"<p class=small>Aucun résultat.</p>"
 }
-function updateManagerAlerts(tracks){const e=$('liveAlerts');if(!e)return;const alerts=[];const max=Number(sessionConfig?.max_duration_sec||0),now=Date.now(),geo=sessionConfig?.geofence_geojson;for(const [rid,pts] of Object.entries(tracks||{})){if(!pts.length)continue;const last=pts[pts.length-1];if(last.finish_at)continue;const elapsed=(now-Number(last.start_at))/1000;if(max&&elapsed>=max)alerts.push('🔴 '+esc(last.first_name+' '+last.last_name)+' — temps limite dépassé');if(geo&&!pointInPolygon(Number(last.lat),Number(last.lon),geo))alerts.push('🔴 '+esc(last.first_name+' '+last.last_name)+' — hors zone');const age=now-Number(last.recorded_at);if(age>45000)alerts.push('🔴 '+esc(last.first_name+' '+last.last_name)+' — GPS perdu depuis '+Math.round(age/1000)+' s');else if(Number(last.accuracy)>50)alerts.push('🟠 '+esc(last.first_name+' '+last.last_name)+' — GPS imprécis');if(last.battery_level!=null&&Number(last.battery_level)<=.2)alerts.push('🟠 '+esc(last.first_name+' '+last.last_name)+' — batterie faible ('+Math.round(Number(last.battery_level)*100)+' %)');const recent=pts.filter(p=>now-Number(p.recorded_at)<=300000);if(recent.length>=2){let dist=0;for(let i=1;i<recent.length;i++)dist+=haversine(Number(recent[i-1].lat),Number(recent[i-1].lon),Number(recent[i].lat),Number(recent[i].lon));if(dist<15&&now-Number(recent[0].recorded_at)>=240000)alerts.push('🟠 '+esc(last.first_name+' '+last.last_name)+' — position presque immobile depuis plusieurs minutes')}}e.innerHTML=alerts.length?'<b>Alertes actives</b><br>'+alerts.join('<br>'):'<span class="small">Aucune alerte active.</span>'}
+function updateManagerAlerts(tracks){
+  const e=$('liveAlerts'); if(!e)return;
+  const alerts=[], now=Date.now(), max=Number(sessionConfig?.max_duration_sec||0), geo=sessionConfig?.geofence_geojson;
+  for(const [rid,pts] of Object.entries(tracks||{})){
+    if(!pts.length)continue;
+    const last=pts[pts.length-1];
+    if(last.finish_at)continue;
+    const elapsed=(now-Number(last.start_at))/1000;
+    if(max&&elapsed>=max)alerts.push('🔴 '+esc(last.first_name+' '+last.last_name)+' — temps limite dépassé');
+    if(geo&&!pointInPolygon(Number(last.lat),Number(last.lon),geo))alerts.push('🔴 '+esc(last.first_name+' '+last.last_name)+' — hors zone');
+    const age=now-Number(last.recorded_at);
+    if(age>45000)alerts.push('🔴 '+esc(last.first_name+' '+last.last_name)+' — GPS perdu depuis '+Math.round(age/1000)+' s');
+    else if(Number(last.accuracy)>50)alerts.push('🟠 '+esc(last.first_name+' '+last.last_name)+' — GPS imprécis');
+    if(last.battery_level!=null&&Number(last.battery_level)<=.2)alerts.push('🟠 '+esc(last.first_name+' '+last.last_name)+' — batterie faible ('+Math.round(Number(last.battery_level)*100)+' %)');
+    const recent=pts.filter(p=>now-Number(p.recorded_at)<=300000);
+    if(recent.length>=2){let dist=0;for(let i=1;i<recent.length;i++)dist+=haversine(Number(recent[i-1].lat),Number(recent[i-1].lon),Number(recent[i].lat),Number(recent[i].lon));if(dist<15&&now-Number(recent[0].recorded_at)>=240000)alerts.push('🟠 '+esc(last.first_name+' '+last.last_name)+' — position presque immobile depuis plusieurs minutes')}
+  }
+  for(const x of results.filter(x=>!session||x.session_id===session.id)){
+    if(x.finish_at)continue;
+    if(x.battery_level!=null&&Number(x.battery_level)<=.2&&!alerts.some(a=>a.includes(x.first_name+' '+x.last_name)&&a.includes('batterie')))alerts.push('🟠 '+esc(x.first_name+' '+x.last_name)+' — batterie faible ('+Math.round(Number(x.battery_level)*100)+' %)');
+    if(x.gps_status==='lost'&&!alerts.some(a=>a.includes(x.first_name+' '+x.last_name)&&a.includes('GPS perdu')))alerts.push('🔴 '+esc(x.first_name+' '+x.last_name)+' — GPS perdu');
+    if(x.gps_status==='imprecise'&&!alerts.some(a=>a.includes(x.first_name+' '+x.last_name)&&a.includes('GPS imprécis')))alerts.push('🟠 '+esc(x.first_name+' '+x.last_name)+' — GPS imprécis');
+  }
+  e.innerHTML=alerts.length?'<b>Alertes actives</b><br>'+alerts.join('<br>'):'<span class="small">Aucune alerte active.</span>';
+}
+
+function renderSecurityTable(){
+  const e=$('securityTable'); if(!e)return;
+  const a=results.filter(x=>!session||x.session_id===session.id), now=Date.now();
+  if(!a.length){e.innerHTML='<p class="small">Aucun participant en cours de suivi.</p>';return}
+  const rows=a.slice().sort((x,y)=>(x.finish_at?1:0)-(y.finish_at?1:0)||Number(y.start_at)-Number(x.start_at)).map(x=>{
+    const active=!x.finish_at, age=x.gps_last_at?now-Number(x.gps_last_at):Infinity;
+    const gps=x.gps_status==='active'&&age<=45000?'🟢 Actif':x.gps_status==='imprecise'?'🟠 Imprécis':x.gps_status==='lost'||age>45000?'🔴 Perdu':'⚪ En attente';
+    const batt=x.battery_level!=null?Math.round(Number(x.battery_level)*100)+' %'+(Number(x.battery_level)<=.2?' ⚠️':''):'—';
+    const stale=active&&x.gps_last_at&&age>45000;
+    return `<tr><td><b>${esc(x.first_name+' '+x.last_name)}</b></td><td>${esc(x.class_name||'')}</td><td>${active?'🟢 En course':'🔵 Arrivé'}</td><td>${gps}${stale?' <span class="small">('+Math.round(age/1000)+' s)</span>':''}</td><td>${batt}</td><td>${x.gps_last_at?clock(x.gps_last_at):'—'}</td><td>${active&&x.gps_last_at&&age>=300000?'🟠 À vérifier':'—'}</td></tr>`;
+  });
+  e.innerHTML='<table><tr><th>Participant</th><th>Classe</th><th>Statut</th><th>GPS</th><th>Batterie</th><th>Dernière télémétrie</th><th>Mobilité</th></tr>'+rows.join('')+'</table>';
+}
+
 function updateLiveClocks(){document.querySelectorAll("[data-live-start]").forEach(e=>e.textContent=dur(Date.now()-Number(e.dataset.liveStart)));}
 let qrStream=null,qrScanTimer=null;
 async function startQrScanner(){
