@@ -35,7 +35,7 @@ const validToken=t=>{try{const [p,sig]=String(t||'').split('.');if(!p||!sig||sig
 const authToken=q=>{const h=String(q.headers.authorization||'');return h.startsWith('Bearer ')?h.slice(7):''};
 app.use(express.static(path.join(__dirname,'public'),{setHeaders:(res,file)=>{if(file.endsWith('index.html')||file.endsWith('sw.js')){res.setHeader('Cache-Control','no-store, no-cache, must-revalidate, proxy-revalidate');res.setHeader('Pragma','no-cache');res.setHeader('Expires','0')}}}));
 app.get('/health',(q,r)=>r.json({ok:true,version:'V31'}));
-app.get('/api/version',(q,r)=>r.json({version:'V32',build:'2026-10-05-session-history'}));
+app.get('/api/version',(q,r)=>r.json({version:'V32.1',build:'2026-10-05-session-history-visible'}));
 app.get('/api/me',(q,r)=>r.json({admin:validToken(authToken(q))}));
 app.post('/api/login',async(q,r)=>{const expectedUser=process.env.ADMIN_USER||'enseignant';const expectedPassword=process.env.ADMIN_PASSWORD||'ChangezMoi123!';const user=clean(q.body.user,80);const password=String(q.body.password||'');if(user!==expectedUser||password!==expectedPassword)return r.status(401).json({error:'Identifiants incorrects'});r.json({ok:true,admin:true,token:makeToken()})});
 app.post('/api/logout',(q,r)=>r.json({ok:true}));

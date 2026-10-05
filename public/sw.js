@@ -1,4 +1,4 @@
-const C="co-v32-cache";
+const C="co-v32-1-cache";
 const A=["./","./index.html","./manifest.json","./logo-suaps.png","./logo-staps.png"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("co-v")&&k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

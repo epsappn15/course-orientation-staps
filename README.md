@@ -49,3 +49,7 @@ Base stable V29.4. Ajouts : télémétrie batterie/GPS, détection d'immobilité
 - Le parcours est alors clôturé côté participant, son GPS/télémétrie s'arrête et il peut ensuite lancer un nouveau parcours.
 - Le serveur refuse les nouvelles positions GPS et télémétries après clôture.
 - Les arrêts gestionnaire sont distingués des arrivées normales.
+
+
+## V32.1
+Correctif : l'historique des séances est chargé automatiquement après connexion gestionnaire. Cache PWA V32.1.
