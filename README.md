@@ -34,3 +34,8 @@ Le dessin de la zone de course est désormais interactif : cliquer sur « Dessin
 
 ## V30.2
 Base stable V29.4. Ajouts : télémétrie batterie/GPS, détection d'immobilité, état GPS, dernière position conservée via les positions GPS, import CSV des participants attendus et suivi de leur statut/nombre de parcours. Les fonctions IGN, géofence, alertes temps, GPS live et anti-double-clic sont conservées.
+
+## V30.3 — télémétrie réellement active
+- Le code participant complet est désormais celui de la version sécurité, directement intégré à index.html.
+- Envoi de télémétrie batterie/GPS pendant chaque parcours et affichage gestionnaire via les champs races.
+- Version/cache PWA V30.3.
