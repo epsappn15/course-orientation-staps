@@ -45,6 +45,27 @@ function net(){const e=$("network");if(!e)return;const update=()=>{e.textContent
 function fillParticipantSession(){const params=new URLSearchParams(location.search);const d=params.get("date")||session?.date||todayISO();const t=params.get("title")||session?.title||"";if($("pdate")&&!$("pdate").value)$("pdate").value=d;if($("ptitle")&&!$("ptitle").value&&t)$("ptitle").value=t}
 async function showServerVersion(){try{const r=await fetch("/api/version",{cache:"no-store"});if(r.ok){const x=await r.json();const e=document.querySelector(".card p.small b");if(e)e.textContent="Version "+x.version}}catch(e){}}
 
+async function loadSessionHistory(){
+  const e=$("sessionHistory"), m=$("sessionHistoryMsg");
+  if(!e)return;
+  if(!localStorage.getItem('co_admin_token')){e.innerHTML='<p class="small">Connectez-vous comme gestionnaire pour afficher les séances.</p>';return;}
+  e.innerHTML='<p class="small">Chargement de l’historique…</p>'; if(m)m.textContent='';
+  try{
+    const r=await apiFetch('/api/sessions');
+    const d=await r.json().catch(()=>[]);
+    if(!r.ok)throw new Error(d.error||'Impossible de charger les séances');
+    const list=Array.isArray(d)?d:(Array.isArray(d.sessions)?d.sessions:[]);
+    const now=new Date();
+    const rows=list.map(x=>({...x,future:new Date(String(x.date)+'T23:59:59')>=now}));
+    rows.sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.title).localeCompare(String(b.title)));
+    if(!rows.length){e.innerHTML='<p class="small">Aucune séance enregistrée.</p>';return;}
+    e.innerHTML='<table><tr><th>Date</th><th>Séance</th><th>État</th><th>Parcours</th><th>Actions</th></tr>'+rows.map(x=>`<tr><td>${esc(x.date)}</td><td><b>${esc(x.title)}</b></td><td>${x.active===0?'⚪ Archivée':(x.future?'🟡 Programmée':'🔵 Terminée / passée')}</td><td>${Number(x.race_count||0)}${Number(x.active_count||0)?` (${Number(x.active_count)} en cours)`:''}</td><td><button class="g" type="button" onclick="openSessionFromHistory('${esc(x.id)}')">Ouvrir</button> <button class="g" type="button" onclick="duplicateSession('${esc(x.id)}')">Dupliquer</button> ${x.active!==0?`<button class="g" type="button" onclick="archiveSession('${esc(x.id)}')">Archiver</button>`:''}</td></tr>`).join('')+'</table>';
+  }catch(err){e.innerHTML='<p class="small err">'+esc(err.message)+'</p>';if(m)m.textContent='';}
+}
+async function openSessionFromHistory(id){try{const r=await apiFetch('/api/sessions/'+encodeURIComponent(id)+'/config');const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Séance introuvable');const x=d.session;session={id:x.id,date:x.session_date,title:x.title};localStorage.setItem(K,JSON.stringify(session));loadSession();loadRoster();showSessionLink();loadSessionHistory();msg('gmsg','Séance ouverte.','ok')}catch(e){msg('sessionHistoryMsg',esc(e.message),'err')}}
+async function duplicateSession(id){const date=prompt('Nouvelle date (AAAA-MM-JJ) :',todayISO());if(!date)return;const title=prompt('Nom de la nouvelle séance :','');if(title===null)return;try{const r=await apiFetch('/api/sessions/'+encodeURIComponent(id)+'/duplicate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,title})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Duplication impossible');await openSessionFromHistory(d.id);msg('gmsg','Séance dupliquée et ouverte.','ok')}catch(e){msg('sessionHistoryMsg',esc(e.message),'err')}}
+async function archiveSession(id){if(!confirm('Archiver cette séance ? Elle restera conservée mais ne sera plus proposée aux participants.'))return;try{const r=await apiFetch('/api/sessions/'+encodeURIComponent(id)+'/archive',{method:'POST'});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Archivage impossible');if(session?.id===id){session=null;localStorage.removeItem(K);$('active').innerHTML='<p class="small">Aucune séance active.</p>';$('sessionLink').innerHTML='';$('sessionQr').innerHTML='';}await loadSessionHistory();msg('gmsg','Séance archivée.','ok')}catch(e){msg('sessionHistoryMsg',esc(e.message),'err')}}
+
 async function checkAdmin(){try{const r=await apiFetch('/api/me');const d=await r.json();if(!d.admin)localStorage.removeItem('co_admin_token');setAdminUI(!!d.admin);return !!d.admin}catch(e){setAdminUI(false);return false}}
 function setAdminUI(ok){$('managerLogin').classList.toggle('hidden',ok);$('managerContent').classList.toggle('hidden',!ok);if(ok){loadSession();loadRoster();loadSessionHistory();initGpsMap();setTimeout(()=>map?.invalidateSize(),100)}}
 async function loginAdmin(){const user=$('adminUser').value.trim(),password=$('adminPassword').value; if(!user||!password)return msg('loginMsg','Identifiant et mot de passe obligatoires.','err'); try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user,password})});const d=await r.json();if(!r.ok)return msg('loginMsg',d.error||'Identifiants incorrects','err');if(!d.token)return msg('loginMsg','Jeton de connexion absent.','err');localStorage.setItem('co_admin_token',d.token);$('adminPassword').value='';msg('loginMsg','Connexion réussie.','ok');setAdminUI(true)}catch(e){msg('loginMsg','Connexion impossible.','err')}}
