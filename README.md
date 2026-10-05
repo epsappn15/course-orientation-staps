@@ -30,3 +30,7 @@ Le dessin de la zone de course est désormais interactif : cliquer sur « Dessin
 - Accès gestionnaire rendu plus robuste après déploiement et changement de cache PWA.
 - Cache service worker passé en V29.2 pour éviter de conserver l’ancienne interface.
 - Le panneau de connexion gestionnaire est explicitement réaffiché lorsqu’aucun jeton valide n’est présent.
+
+
+## V30.1
+Base stable V29.4. Ajouts : télémétrie batterie/GPS, détection d'immobilité, état GPS, dernière position conservée via les positions GPS, import CSV des participants attendus et suivi de leur statut/nombre de parcours. Les fonctions IGN, géofence, alertes temps, GPS live et anti-double-clic sont conservées.
