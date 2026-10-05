@@ -25,3 +25,8 @@ Correction de l'effacement des résultats gestionnaire : endpoint POST dédié, 
 
 ### Correction zone de sécurité
 Le dessin de la zone de course est désormais interactif : cliquer sur « Dessiner la zone », placer au moins 3 points sur la carte, puis cliquer sur « Terminer la zone » (ou double-cliquer). La zone doit ensuite être enregistrée avec « Enregistrer les paramètres ».
+
+## V29.2 — correction accès gestionnaire
+- Accès gestionnaire rendu plus robuste après déploiement et changement de cache PWA.
+- Cache service worker passé en V29.2 pour éviter de conserver l’ancienne interface.
+- Le panneau de connexion gestionnaire est explicitement réaffiché lorsqu’aucun jeton valide n’est présent.
