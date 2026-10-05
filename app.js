@@ -1,7 +1,7 @@
 
 const K="co-v16-session",R="co-v16-race",S="co-v16-results",H="co-v16-history",GQ="co-v27-gps-queue";
 function apiFetch(url,init={}){const h=new Headers(init.headers||{});const token=localStorage.getItem("co_admin_token");if(token)h.set("Authorization","Bearer "+token);return fetch(url,{...init,headers:h,cache:init.cache||"no-store"});}
-let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),history=JSON.parse(localStorage.getItem(H)||"[]"),gpsQueue=JSON.parse(localStorage.getItem(GQ)||"[]"),timer=null,gpsWatch=null,map=null,mapLayers={},mapBases={};
+let session=JSON.parse(localStorage.getItem(K)||"null"),race=JSON.parse(localStorage.getItem(R)||"null"),results=JSON.parse(localStorage.getItem(S)||"[]"),history=JSON.parse(localStorage.getItem(H)||"[]"),gpsQueue=JSON.parse(localStorage.getItem(GQ)||"[]"),timer=null,gpsWatch=null,map=null,mapLayers={},mapBases={},sessionConfig=null,zoneDrawing=false,zoneDraft=[],zoneLayer=null,alertState={warning:false,limit:false,out:false};
 const $=x=>document.getElementById(x),esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 function todayISO(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
 function dur(ms){ms=Math.max(0,Number(ms)||0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return [h,m,sec].map(v=>String(v).padStart(2,"0")).join(":")}
