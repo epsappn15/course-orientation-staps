@@ -1,28 +1,23 @@
-COURSE D'ORIENTATION STAPS / SUAPS — V34.1 CORRIGÉE
+COURSE D’ORIENTATION STAPS / SUAPS — V35 MSA-APN
 
-Cette archive contient le projet complet :
-- serveur Node.js et configuration Render ;
-- interface participant et gestionnaire ;
-- logos STAPS et SUAPS ;
-- manifest et service worker ;
-- fonctionnalités V34, dont le pointage QR.
+Cette version conserve les fonctions V34.1 (GPS, chronomètre, QR, suivi et résultats) et ajoute un module pédagogique MSA-APN facultatif, activable séance par séance par le gestionnaire.
 
-CORRECTION V34.1
-Le bouton principal « SCANNEZ LA BALISE DÉPART » ouvre maintenant directement
-la caméra en mode « Pointage QR uniquement ». En mode GPS, le bouton conserve
-son démarrage normal. Un message explicite est affiché si la caméra est bloquée,
-indisponible ou si l'accès HTTPS manque.
+MODULE MSA-APN
+- Référence : document MSA-APN fourni dans la conversation (Nicolas Hayer, Université de Poitiers, 2026).
+- 4 principes : Anticipation, Régulation, Prise de décision, Action responsable.
+- 8 dimensions : Information, Préparation, Équipement, Compétences, Sécurité, Adaptation, Environnement, Attitude.
+- Boucle en 7 étapes : Prévoir, Vérifier, Évaluer, Agir, Observer, Adapter, Décider.
+- Zones : maîtrisée (poursuivre), adaptation (modifier le projet), rupture (renoncer / se mettre en sécurité).
+- Bilans pédagogiques distincts des temps et résultats sportifs.
 
-DÉPLOIEMENT SUR RENDER
-1. Décompresser cette archive.
-2. Déployer le contenu du dossier sur le dépôt GitHub connecté à Render
-   (en conservant les dossiers et sous-dossiers).
-3. Conserver les variables d'environnement déjà configurées sur Render :
-   TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, ADMIN_USER, ADMIN_PASSWORD,
-   SESSION_SECRET et PUBLIC_URL.
-4. Lancer un nouveau déploiement.
-5. Sur le téléphone, fermer l'ancien onglet de l'application puis rouvrir
-   l'adresse Render en HTTPS. Si nécessaire, actualiser la page.
+ACTIVATION
+1. Déployer ce projet sur Render en conservant les variables d’environnement existantes.
+2. Ouvrir l’espace Gestionnaire et créer/ouvrir une séance.
+3. Dans « Module pédagogique MSA-APN », cocher l’activation puis enregistrer.
+4. Les participants verront alors le module dans leur espace.
+5. Les bilans transmis sont consultables dans le même panneau gestionnaire.
 
-Le dossier public doit rester à la racine du projet, au même niveau que server.js.
-Ne pas publier les identifiants ni les secrets dans le dépôt.
+Les nouvelles tables et colonnes sont créées automatiquement au démarrage. Les séances existantes ont le module désactivé par défaut.
+
+IMPORTANT
+Le module est un support pédagogique, pas un dispositif de secours ni une évaluation automatique de la sécurité. En zone de rupture, le participant doit se mettre en sécurité et suivre les consignes d’alerte de l’enseignant.

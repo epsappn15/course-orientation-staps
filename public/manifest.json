@@ -1,6 +1,6 @@
 {
-  "name": "Suivi Course d'orientation",
-  "short_name": "CO",
+  "name": "Course d’orientation STAPS SUAPS — MSA-APN",
+  "short_name": "CO MSA-APN",
   "start_url": "./",
   "display": "standalone",
   "theme_color": "#a90818",
