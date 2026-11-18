@@ -1,4 +1,4 @@
-const C="co-v36-msa-apn-cache";
+const C="co-v37-portfolio-msa-cache";
 const A=["./","./index.html","./manifest.json","./logo-suaps.png","./logo-staps.png","https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js","https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("co-v")&&k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
