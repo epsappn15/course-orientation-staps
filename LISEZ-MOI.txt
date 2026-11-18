@@ -1,4 +1,4 @@
-COURSE D’ORIENTATION STAPS / SUAPS — V38.3 CARNET DE PROGRESSION + MSA-APN
+COURSE D’ORIENTATION STAPS / SUAPS — V39 CARNET DE PROGRESSION + MSA-APN
 
 Cette version conserve les fonctions V34.1 (GPS, chronomètre, QR, suivi et résultats) et ajoute un module pédagogique MSA-APN facultatif, activable séance par séance par le gestionnaire.
 
@@ -26,7 +26,7 @@ Le module est un support pédagogique, pas un dispositif de secours ni une éval
 V37 — Correctif affichage élève MSA-APN : le lien QR de séance est désormais prioritaire sur une ancienne séance mémorisée sur le téléphone. Le statut MSA est aussi rechargé au retour sur la page et au rétablissement du réseau. Le cache hors ligne est renouvelé.
 
 
-V38.3 — CARNET DE PROGRESSION (SANS ROSTER)
+V39 — CARNET DE PROGRESSION (SANS ROSTER)
 - Aucun roster ni import de liste d'étudiants n'est nécessaire.
 - Chaque étudiant crée son carnet avec prénom, nom et classe facultative.
 - Un code personnel est généré : il doit être conservé pour retrouver le carnet depuis un autre appareil. Le code est affiché une seule fois à la création et stocké haché côté serveur.
@@ -37,4 +37,4 @@ V38.3 — CARNET DE PROGRESSION (SANS ROSTER)
 PRÉCAUTIONS
 Le code personnel donne accès aux données du carnet : ne pas le partager. Les rapprochements inter-séances utilisent prénom, nom et classe ; les homonymes doivent utiliser une classe distincte pour éviter les confusions. Les données antérieures à la création du carnet peuvent apparaître si l'identité correspond.
 
-V38.3 — Développements initiaux : carnet personnel, code de rattachement, historique longitudinal des courses et bilans MSA-APN. Tester les parcours en environnement de préproduction avant déploiement sur la base réelle.
+V39 — Développements initiaux : carnet personnel, code de rattachement, historique longitudinal des courses et bilans MSA-APN. Tester les parcours en environnement de préproduction avant déploiement sur la base réelle.
