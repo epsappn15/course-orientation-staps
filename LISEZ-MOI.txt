@@ -1,0 +1,19 @@
+CORRECTIF DU BOUTON SCAN — V34
+
+Ce ZIP est un correctif à appliquer sur le dossier de la V34 déjà téléchargé.
+Ce n'est PAS l'archive complète de l'application.
+
+Étapes :
+1. Décompresse l'archive complète actuelle de la V34 depuis GitHub.
+2. Copie patch-v34.js à la racine du dossier du projet (au même niveau que server.js).
+3. Ouvre un terminal dans ce dossier.
+4. Lance : node patch-v34.js
+5. Vérifie que public/index.html a été modifié.
+6. Recrée ensuite le ZIP complet du projet et déploie-le sur Render.
+
+Le correctif fait ceci :
+- mode GPS : le bouton garde son action de départ habituelle ;
+- mode « Pointage QR uniquement » : le bouton « SCANNEZ LA BALISE DÉPART » ouvre directement la caméra ;
+- le démarrage du chronomètre reste déclenché par la lecture du QR Départ.
+
+Le script s'arrête sans modifier le fichier si la structure attendue n'est pas trouvée.
