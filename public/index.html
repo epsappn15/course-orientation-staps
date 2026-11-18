@@ -9,7 +9,7 @@
 <div class="card"><h2>Ma séance</h2><div class="grid"><div><label>Date de séance</label><input type="date" id="pdate"></div><div><label>Nom de la séance</label><input id="ptitle" placeholder="Ex. CO STAPS"></div></div>
 <label>Prénom</label><input id="first"><label>Nom</label><input id="last"><label>Classe</label><input id="cls"><label>Circuit / balises</label><input id="course" placeholder="Saisie libre">
 <label>Mode de chronométrage</label><select id="chronometerMode" onchange="updateChronometerMode()"><option value="gps">GPS + chronomètre manuel</option><option value="qr">Pointage QR uniquement</option></select>
-<button id="startBtn" class="r wide" onclick="start()">▶ JE PARS — NOUVEAU PARCOURS</button><div class="card" style="margin-top:12px"><h3>📷 Pointage par QR code</h3><p class="small">Scannez la balise Départ, les passages intermédiaires puis la balise Arrivée. Les scans sont conservés sur ce téléphone hors connexion et synchronisés dès que le réseau revient.</p><button class="b wide" type="button" onclick="startCheckpointScanner()">📷 Scanner une balise</button><video id="checkpointVideo" class="hidden" playsinline style="width:100%;max-width:420px;margin-top:10px;border-radius:12px"></video><button id="stopCheckpointScanner" class="g wide hidden" type="button" onclick="stopCheckpointScanner()">Arrêter le scanner</button><div id="checkpointStatus" class="status">Aucun pointage QR pour le moment.</div></div><div id="run" class="hidden"><div id="participantAlert" class="status hidden"></div><div id="participantTelemetry" class="status">📡 GPS : en attente · 🔋 Batterie : —</div><div class="timer" id="timer">00:00:00</div><button id="finishBtn" class="b wide" onclick="finish()">■ JE SUIS ARRIVÉ</button></div><div id="pmsg"></div></div>
+<button id="startBtn" class="r wide" type="button" onclick="handleStartButtonClick()">▶ JE PARS — NOUVEAU PARCOURS</button><div class="card" style="margin-top:12px"><h3>📷 Pointage par QR code</h3><p class="small">Scannez la balise Départ, les passages intermédiaires puis la balise Arrivée. Les scans sont conservés sur ce téléphone hors connexion et synchronisés dès que le réseau revient.</p><button class="b wide" type="button" onclick="startCheckpointScanner()">📷 Scanner une balise</button><video id="checkpointVideo" class="hidden" playsinline style="width:100%;max-width:420px;margin-top:10px;border-radius:12px"></video><button id="stopCheckpointScanner" class="g wide hidden" type="button" onclick="stopCheckpointScanner()">Arrêter le scanner</button><div id="checkpointStatus" class="status">Aucun pointage QR pour le moment.</div></div><div id="run" class="hidden"><div id="participantAlert" class="status hidden"></div><div id="participantTelemetry" class="status">📡 GPS : en attente · 🔋 Batterie : —</div><div class="timer" id="timer">00:00:00</div><button id="finishBtn" class="b wide" onclick="finish()">■ JE SUIS ARRIVÉ</button></div><div id="pmsg"></div></div>
 <div class="card"><h2>📊 Mon historique</h2><p class="small">Les courses terminées sur ce téléphone sont conservées ici, même sans Internet.</p><div id="history"></div><button class="g wide" onclick="clearParticipantHistory()">🗑️ Effacer mon historique</button></div>
 <div class="card qr hidden" id="qrCard"><h2>Récupération manuelle</h2><p>À utiliser seulement si la synchronisation n'est pas possible.</p><img id="qr"><p class="small">Le QR sera lisible par l'application gestionnaire.</p></div>
 </section>
@@ -366,9 +366,24 @@ function updateChronometerMode(){
  if(b)b.textContent=mode==='qr'?'📷 SCANNEZ LA BALISE DÉPART':'▶ JE PARS — NOUVEAU PARCOURS';
  if($('checkpointStatus'))$('checkpointStatus').textContent=mode==='qr'?'Mode QR indépendant activé : départ et arrivée par scan.':'Mode complémentaire : le GPS fonctionne et les scans QR ajoutent des temps de passage.';
 }
+async function handleStartButtonClick(){
+ const mode=$('chronometerMode')?.value||'gps';
+ if(mode==='qr'){
+  if(race&&!race.finish_at){
+   msg('pmsg','Un parcours est déjà en cours. Scannez la balise Arrivée pour le terminer.','status');
+   return;
+  }
+  await startCheckpointScanner();
+  return;
+ }
+ await start();
+}
 async function startCheckpointScanner(){
  const v=$('checkpointVideo');if(!v)return;
- if(!navigator.mediaDevices?.getUserMedia)return msg('checkpointStatus','Caméra indisponible. Vérifiez les autorisations et utilisez un appareil compatible.','err');
+ if(checkpointStream)return msg('checkpointStatus','Scanner déjà ouvert : présentez un QR code devant la caméra.','status');
+ if(!window.isSecureContext)return msg('checkpointStatus','La caméra nécessite une adresse HTTPS. Ouvrez le site Render en https://.','err');
+ if(!navigator.mediaDevices?.getUserMedia)return msg('checkpointStatus','Caméra indisponible dans ce navigateur. Essayez Chrome ou Safari à jour en HTTPS.','err');
+ msg('checkpointStatus','Ouverture de la caméra… Autorisez son accès si le navigateur le demande.','status');
  try{
   checkpointStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
   v.srcObject=checkpointStream;v.classList.remove('hidden');$('stopCheckpointScanner').classList.remove('hidden');await v.play();
@@ -378,7 +393,10 @@ async function startCheckpointScanner(){
    else if(typeof jsQR==='function'){const c=document.createElement('canvas'),ctx=c.getContext('2d',{willReadFrequently:true});c.width=v.videoWidth;c.height=v.videoHeight;if(c.width&&c.height){ctx.drawImage(v,0,0,c.width,c.height);const im=ctx.getImageData(0,0,c.width,c.height);value=jsQR(im.data,im.width,im.height,{inversionAttempts:'attemptBoth'})?.data||null}}
    if(value){await handleCheckpointScan(value);if(!checkpointStream)return}
   }catch(e){}checkpointTimer=setTimeout(scan,350)};scan();
- }catch(e){msg('checkpointStatus','Impossible d’ouvrir la caméra. Autorisez son accès dans le navigateur.','err')}
+ }catch(e){
+  const reason=e?.name==='NotAllowedError'?'Autorisation caméra refusée. Autorisez la caméra dans les réglages du navigateur puis réessayez.':e?.name==='NotFoundError'?'Aucune caméra détectée sur cet appareil.':e?.name==='NotReadableError'?'La caméra est déjà utilisée par une autre application. Fermez-la puis réessayez.':'Impossible d’ouvrir la caméra ('+(e?.name||'erreur')+'). Vérifiez les autorisations du navigateur.';
+  msg('checkpointStatus',reason,'err');
+ }
 }
 function stopCheckpointScanner(){
  if(checkpointTimer){clearTimeout(checkpointTimer);checkpointTimer=null}

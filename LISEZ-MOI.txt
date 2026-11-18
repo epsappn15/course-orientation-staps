@@ -1,19 +1,28 @@
-CORRECTIF DU BOUTON SCAN — V34
+COURSE D'ORIENTATION STAPS / SUAPS — V34.1 CORRIGÉE
 
-Ce ZIP est un correctif à appliquer sur le dossier de la V34 déjà téléchargé.
-Ce n'est PAS l'archive complète de l'application.
+Cette archive contient le projet complet :
+- serveur Node.js et configuration Render ;
+- interface participant et gestionnaire ;
+- logos STAPS et SUAPS ;
+- manifest et service worker ;
+- fonctionnalités V34, dont le pointage QR.
 
-Étapes :
-1. Décompresse l'archive complète actuelle de la V34 depuis GitHub.
-2. Copie patch-v34.js à la racine du dossier du projet (au même niveau que server.js).
-3. Ouvre un terminal dans ce dossier.
-4. Lance : node patch-v34.js
-5. Vérifie que public/index.html a été modifié.
-6. Recrée ensuite le ZIP complet du projet et déploie-le sur Render.
+CORRECTION V34.1
+Le bouton principal « SCANNEZ LA BALISE DÉPART » ouvre maintenant directement
+la caméra en mode « Pointage QR uniquement ». En mode GPS, le bouton conserve
+son démarrage normal. Un message explicite est affiché si la caméra est bloquée,
+indisponible ou si l'accès HTTPS manque.
 
-Le correctif fait ceci :
-- mode GPS : le bouton garde son action de départ habituelle ;
-- mode « Pointage QR uniquement » : le bouton « SCANNEZ LA BALISE DÉPART » ouvre directement la caméra ;
-- le démarrage du chronomètre reste déclenché par la lecture du QR Départ.
+DÉPLOIEMENT SUR RENDER
+1. Décompresser cette archive.
+2. Déployer le contenu du dossier sur le dépôt GitHub connecté à Render
+   (en conservant les dossiers et sous-dossiers).
+3. Conserver les variables d'environnement déjà configurées sur Render :
+   TURSO_DATABASE_URL, TURSO_AUTH_TOKEN, ADMIN_USER, ADMIN_PASSWORD,
+   SESSION_SECRET et PUBLIC_URL.
+4. Lancer un nouveau déploiement.
+5. Sur le téléphone, fermer l'ancien onglet de l'application puis rouvrir
+   l'adresse Render en HTTPS. Si nécessaire, actualiser la page.
 
-Le script s'arrête sans modifier le fichier si la structure attendue n'est pas trouvée.
+Le dossier public doit rester à la racine du projet, au même niveau que server.js.
+Ne pas publier les identifiants ni les secrets dans le dépôt.
