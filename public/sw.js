@@ -1,5 +1,5 @@
-const C="co-v39-evaluation-portfolio-cache";
-const A=["./","./index.html","./manifest.json","./logo-suaps.png","./logo-staps.png","https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js","https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"];
+const C="co-v40-logo-favicons-cache";
+const A=["./","./index.html","./manifest.json","./logo-suaps.png","./logo-staps.png","./logo-co-blanc.png","./favicon.ico","./favicon-32.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js","https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A).catch(()=>{})).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith("co-v")&&k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener("fetch",e=>{
